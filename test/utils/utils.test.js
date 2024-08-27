@@ -1,4 +1,4 @@
-import { readFile } from '@web/test-runner-commands';
+import { readFile, setViewport } from '@web/test-runner-commands';
 import { expect } from '@esm-bundle/chai';
 import sinon from 'sinon';
 import { waitFor, waitForElement } from '../helpers/waitfor.js';
@@ -68,6 +68,7 @@ describe('Utils', () => {
 
     describe('Configure Auto Block', () => {
       it('Disable auto block when #_dnb in url', async () => {
+        setViewport({ width: 600, height: 1500 });
         await waitForElement('.disable-autoblock');
         const disableAutoBlockLink = document.querySelector('.disable-autoblock');
         utils.decorateLinks(disableAutoBlockLink);
@@ -87,6 +88,15 @@ describe('Utils', () => {
       });
     });
 
+    describe('Custom Link Actions', () => {
+      it('Implements a login action', async () => {
+        await waitForElement('.login-action');
+        const login = document.querySelector('.login-action');
+        utils.decorateLinks(login);
+        expect(login.href).to.equal('https://www.stage.adobe.com/');
+      });
+    });
+
     describe('Fragments', () => {
       it('fully unwraps a fragment', () => {
         const fragments = document.querySelectorAll('.link-block.fragment');
@@ -97,14 +107,14 @@ describe('Utils', () => {
       it('Does not unwrap when sibling content present', () => {
         const fragments = document.querySelectorAll('.link-block.fragment');
         utils.decorateAutoBlock(fragments[1]);
-        expect(fragments[1].parentElement.nodeName).to.equal('P');
+        expect(fragments[1].parentElement.nodeName).to.equal('DIV');
         expect(fragments[1].parentElement.textContent).to.contain('My sibling');
       });
 
       it('Does not unwrap when not in paragraph tag', () => {
         const fragments = document.querySelectorAll('.link-block.fragment');
         utils.decorateAutoBlock(fragments[1]);
-        expect(fragments[1].parentElement.nodeName).to.equal('P');
+        expect(fragments[1].parentElement.nodeName).to.equal('DIV');
         expect(fragments[1].parentElement.textContent).to.contain('My sibling');
       });
     });
@@ -182,7 +192,7 @@ describe('Utils', () => {
     it('Decorates placeholder', () => {
       const paragraphs = [...document.querySelectorAll('p')];
       const lastPara = paragraphs.pop();
-      expect(lastPara.textContent).to.equal('nothing to see here');
+      expect(lastPara.textContent).to.equal(' inkl. MwSt.');
     });
 
     it('Decorates meta helix url', () => {
@@ -233,6 +243,14 @@ describe('Utils', () => {
       expect(newTabLink.target).to.contain('_blank');
       newTabLink.href = newTabLink.href.replace('#_blank', '');
       expect(newTabLink.href).to.equal('https://www.adobe.com/test');
+    });
+
+    it('Add rel=nofollow to a link', () => {
+      const noFollowContainer = document.querySelector('main div');
+      utils.decorateLinks(noFollowContainer);
+      const noFollowLink = noFollowContainer.querySelector('.no-follow');
+      expect(noFollowLink.rel).to.contain('nofollow');
+      expect(noFollowLink.href).to.equal('https://www.adobe.com/test');
     });
 
     it('Sets up milo.deferredPromise', async () => {
@@ -414,6 +432,24 @@ describe('Utils', () => {
       expect(block).to.be.null;
       expect(document.querySelector('.quote.hide-block')).to.be.null;
     });
+
+    it('should convert prod links to stage links on stage env', async () => {
+      const stageDomainsMap = {
+        'www.adobe.com': 'www.stage.adobe.com',
+        'blog.adobe.com': 'blog.stage.adobe.com',
+        'business.adobe.com': 'business.stage.adobe.com',
+        'helpx.adobe.com': 'helpx.stage.adobe.com',
+        'news.adobe.com': 'news.stage.adobe.com',
+      };
+      utils.setConfig({
+        ...config,
+        env: { name: 'stage' },
+        stageDomainsMap,
+      });
+      const links = Object.keys(stageDomainsMap).map((prodDom) => document.body.appendChild(createTag('a', { href: `https://${prodDom}`, 'data-prod-dom': prodDom })));
+      await utils.decorateLinks(document.body);
+      links.forEach((l) => expect(l.hostname === stageDomainsMap[l.dataset.prodDom]).to.be.true);
+    });
   });
 
   describe('title-append', async () => {
@@ -532,7 +568,6 @@ describe('Utils', () => {
     const analytics = '<meta property="article:tag" content="Analytics">';
     const commerce = '<meta property="article:tag" content="Commerce">';
     const summit = '<meta property="article:tag" content="Summit">';
-    const promoConfig = { locale: { contentRoot: '/test/utils/mocks' } };
     let oldHead;
     let promoBody;
     let taxonomyData;
@@ -558,21 +593,21 @@ describe('Utils', () => {
 
     it('loads from metadata', async () => {
       document.head.innerHTML = favicon + ccxVideo;
-      await utils.decorateFooterPromo(promoConfig);
+      await utils.decorateFooterPromo();
       const a = document.querySelector('main > div:last-of-type a');
       expect(a.href).includes('/fragments/footer-promos/ccx-video-links');
     });
 
     it('loads from taxonomy in order on sheet', async () => {
       document.head.innerHTML = ccxVideo + typeTaxonomy + analytics + commerce + summit;
-      await utils.decorateFooterPromo(promoConfig);
+      await utils.decorateFooterPromo();
       const a = document.querySelector('main > div:last-of-type a');
       expect(a.href).includes('/fragments/footer-promos/commerce');
     });
 
     it('loads backup from tag when taxonomy has no promo', async () => {
       document.head.innerHTML = ccxVideo + typeTaxonomy + summit;
-      await utils.decorateFooterPromo(promoConfig);
+      await utils.decorateFooterPromo();
       const a = document.querySelector('main > div:last-of-type a');
       expect(a.href).includes('/fragments/footer-promos/ccx-video-links');
     });
@@ -610,10 +645,33 @@ describe('Utils', () => {
       document.head.innerHTML = await readFile({ path: './mocks/head-personalization.html' });
       await utils.loadArea();
       const resultConfig = utils.getConfig();
-      const resultExperiment = resultConfig.experiments[0];
+      const resultExperiment = resultConfig.mep.experiments[0];
       expect(resultConfig.mep.preview).to.be.true;
-      expect(resultConfig.experiments.length).to.equal(3);
-      expect(resultExperiment.manifest).to.equal('/products/special-offers-manifest.json');
+      expect(resultConfig.mep.experiments.length).to.equal(3);
+      expect(resultExperiment.manifest).to.equal('https://main--milo--adobecom.hlx.page/products/special-offers-manifest.json');
+    });
+  });
+
+  describe('filterDuplicatedLinkBlocks', () => {
+    it('returns empty array if receives invalid params', () => {
+      expect(utils.filterDuplicatedLinkBlocks()).to.deep.equal([]);
+    });
+
+    it('removes duplicated link-blocks', () => {
+      const block1 = document.createElement('div');
+      block1.classList.add('modal');
+      block1.setAttribute('data-modal-hash', 'modalHash1');
+      block1.setAttribute('data-modal-path', 'modalPath1');
+      const block2 = document.createElement('div');
+      block2.classList.add('modal');
+      block2.setAttribute('data-modal-hash', 'modalHash2');
+      block2.setAttribute('data-modal-path', 'modalPath2');
+      const block3 = document.createElement('div');
+      block3.classList.add('modal');
+      block3.setAttribute('data-modal-hash', 'modalHash2');
+      block3.setAttribute('data-modal-path', 'modalPath2');
+      const blocks = [block1, block2, block3];
+      expect(utils.filterDuplicatedLinkBlocks(blocks)).to.deep.equal([block1, block2]);
     });
   });
 });
