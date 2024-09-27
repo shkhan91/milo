@@ -410,6 +410,16 @@ describe('getConfig', () => {
     });
   });
 
+  it('Should have environment set on events page', async () => {
+    const cfg = { pathname: '/events/hub' };
+    setConfig(cfg);
+    const myState = JSON.parse(JSON.stringify(state));
+    myState.environment = 'dev';
+    const config = await getConfig(myState, strings);
+
+    expect(config.collection.endpoint).to.include('environment=dev');
+  });
+
   it('should return localized filters', async () => {
     const cfg = {
       pathname: '/be_fr/blah.html',

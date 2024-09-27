@@ -53,7 +53,7 @@ const loadCaas = async (a) => {
   }
 
   const { env } = getConfig();
-  const { host, search } = window.location;
+  const { host, search, href } = window.location;
   let chimeraEndpoint = 'www.adobe.com/chimera-api/collection';
   const queryParams = new URLSearchParams(search);
   const caasEndpoint = queryParams.get('caasendpoint');
@@ -66,8 +66,20 @@ const loadCaas = async (a) => {
     chimeraEndpoint = P_CAAS_AIO;
   }
 
-  if (host.includes('hlx.page') || env?.name === 'local' || caasContainer === 'draft') {
+  if (host.includes('hlx.page') || env?.name === 'local' || caasContainer === 'draft'
+    || host.includes('stage.adobe')) {
     state.draftDb = true;
+  }
+
+  state.environment = '';
+  if (href.includes('/events/hub')) {
+    if (host.includes('dev')) {
+      chimeraEndpoint = S_CAAS_AIO;
+      state.environment = 'dev';
+    } else if (host.includes('stage')) {
+      chimeraEndpoint = S_CAAS_AIO;
+      state.environment = 'stage';
+    }
   }
 
   state.endpoint = chimeraEndpoint;
