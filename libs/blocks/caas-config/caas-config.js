@@ -958,7 +958,7 @@ const getPanels = (tagsData) => [
 ];
 
 /* c8 ignore next 15 */
-const addIdOverlays = () => {
+export const addIdOverlays = () => {
   document.querySelectorAll('.consonant-Card').forEach((card) => {
     if (!card.querySelector('.cardid')) {
       const idBtn = document.createElement('button');
