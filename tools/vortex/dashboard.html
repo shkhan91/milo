@@ -1,0 +1,38 @@
+<html lang="en">
+<head>
+  <title>Vortex - AI Video Command Center</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./vortex.css">
+</head>
+<body>
+  <div class="vortex-header-bar">
+    <div class="vortex-header-content">
+      <div class="vortex-brand">
+        <svg class="vortex-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+          <path d="M12 6c-3.31 0-6 2.69-6 6h2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.21-1.79 4-4 4v2c3.31 0 6-2.69 6-6s-2.69-6-6-6z" fill="currentColor">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        <span class="vortex-product-name">Vortex</span>
+      </div>
+      <div class="vortex-header-badge">AI-Powered</div>
+    </div>
+  </div>
+  
+  <div class="vortex-page-title">
+    <div class="vortex-hero-content">
+      <h1>AI Video Command Center</h1>
+      <p>AI-powered video management and processing for creative professionals</p>
+    </div>
+  </div>
+  
+  <div class="vortex-app"></div>
+
+  <script type="module">
+    import init from './vortex.js';
+    init();
+  </script>
+</body>
+</html>
+
