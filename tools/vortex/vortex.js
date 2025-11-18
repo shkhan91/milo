@@ -299,7 +299,7 @@ class VortexApp {
     
     console.log(`Filtered: ${filtered.length} of ${this.allVideos.length} videos`);
     if (searchQuery || this.currentFilter !== 'all') {
-      this.addRecentAction(`🔍 Filtered: ${filtered.length} videos found`);
+      this.addRecentAction(`Filtered: ${filtered.length} videos found`);
     }
   }
 
@@ -424,7 +424,7 @@ class VortexApp {
       <div class="vortex-panel">
         <div class="vortex-panel-header">
           <h3 class="vortex-panel-title">
-            <span class="vortex-ai-badge">✨ AI</span>
+            <span class="vortex-ai-badge">AI</span>
             Command Center
           </h3>
           <span class="vortex-ai-status">Powered by AWS Bedrock</span>
@@ -433,26 +433,26 @@ class VortexApp {
           <textarea 
             class="vortex-command-input" 
             id="vortex-command"
-            placeholder="Ask AI anything...
+            placeholder="Enter natural language commands...
 
-🎯 Smart Recommendations:
-• 'Recommend videos for beginners'
-• 'Find tutorials about AI in Photoshop'
+Smart Recommendations:
+• Recommend videos for beginners
+• Find tutorials about AI in Photoshop
 
-📚 AI Collections:
-• 'Create collection of advanced content'
-• 'Group videos by skill level'
+AI Collections:
+• Create collection of advanced content
+• Group videos by skill level
 
-✂️ Content Generation:
-• 'Generate 30-sec clips from chapters'
-• 'Create highlight reel from video #1234'
+Content Generation:
+• Generate 30-sec clips from chapters
+• Create highlight reel from video #1234
 
-📝 AI Analysis:
-• 'Summarize this video'
-• 'Extract key topics from transcripts'"></textarea>
+AI Analysis:
+• Summarize this video
+• Extract key topics from transcripts"></textarea>
           <div class="vortex-button-row">
             <button class="vortex-btn vortex-btn-primary" id="execute-btn">
-              <span style="margin-right: 6px;">✨</span>Execute AI Command
+              Execute Prompt
             </button>
             <button class="vortex-btn vortex-btn-secondary" id="clear-btn">
               Clear
@@ -515,10 +515,10 @@ class VortexApp {
 
   renderTabs() {
     const tabs = [
-      { id: 'videos', label: '🎬 Video Library' },
-      { id: 'collections', label: '✨ AI Collections' },
-      { id: 'processing', label: '⚡ AI Processing' },
-      { id: 'search', label: '🔍 AI-Powered Search' },
+      { id: 'videos', label: 'Video Library' },
+      { id: 'collections', label: 'AI Collections' },
+      { id: 'processing', label: 'AI Processing' },
+      { id: 'search', label: 'AI-Powered Search' },
     ];
 
     return `
@@ -558,7 +558,7 @@ class VortexApp {
             class="vortex-search-input" 
             placeholder="Search videos by title, description, or tags..."
             id="video-search">
-          <button class="vortex-search-button" id="search-btn">🔍 Search</button>
+          <button class="vortex-search-button" id="search-btn">Search</button>
         </div>
         <div class="vortex-filter-controls">
           <div class="vortex-filter-section">
@@ -637,9 +637,9 @@ class VortexApp {
           <h4 class="vortex-video-title">${video.title}</h4>
           ${video.description ? `<p class="vortex-video-description">${video.description.substring(0, 100)}...</p>` : ''}
           <div class="vortex-video-meta">
-            ${video.views !== 'N/A' ? `<span>👁️ ${video.views} views</span>` : ''}
-            <span>📅 ${video.date}</span>
-            ${video.mpcId ? `<span>🎬 ID: ${video.mpcId}</span>` : ''}
+            ${video.views !== 'N/A' ? `<span>${video.views} views</span>` : ''}
+            <span>${video.date}</span>
+            ${video.mpcId ? `<span>ID: ${video.mpcId}</span>` : ''}
           </div>
           <div class="vortex-video-actions">
             <button class="vortex-video-action" data-action="view">View</button>
@@ -656,16 +656,15 @@ class VortexApp {
     return `
       <div class="vortex-section-header">
         <h2 class="vortex-section-title">
-          <span class="vortex-ai-badge-inline">✨ AI</span>
+          <span class="vortex-ai-badge-inline">AI</span>
           Generated Collections
         </h2>
         <button class="vortex-btn vortex-btn-primary">
-          <span style="margin-right: 6px;">✨</span>
           Create AI Collection
         </button>
       </div>
       <div style="background: #f0f9ff; border: 2px solid #bfdbfe; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
-        <p style="color: #1e40af; font-weight: 600; margin: 0 0 8px 0;">💡 AI-Powered Collections</p>
+        <p style="color: #1e40af; font-weight: 600; margin: 0 0 8px 0;">AI-Powered Collections</p>
         <p style="color: #1e3a8a; font-size: 13px; margin: 0;">
           Let AI automatically group and organize your videos by topic, skill level, product, or custom criteria. Collections update intelligently as new content is added.
         </p>
@@ -757,11 +756,11 @@ class VortexApp {
   renderSearchTab() {
     return `
       <h2 class="vortex-section-title" style="margin-bottom: 16px;">
-        <span class="vortex-ai-badge-inline">✨ AI</span>
+        <span class="vortex-ai-badge-inline">AI</span>
         Semantic Video Search
       </h2>
       <div style="background: #f0f9ff; border: 2px solid #bfdbfe; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
-        <p style="color: #1e40af; font-weight: 600; margin: 0 0 8px 0;">🔍 AI-Powered Transcript Search</p>
+        <p style="color: #1e40af; font-weight: 600; margin: 0 0 8px 0;">AI-Powered Transcript Search</p>
         <p style="color: #1e3a8a; font-size: 13px; margin: 0;">
           Search across all video transcripts using natural language. AI understands context and finds relevant moments even if exact words don't match.
         </p>
@@ -770,10 +769,10 @@ class VortexApp {
         <input 
           type="text" 
           class="vortex-search-input" 
-          placeholder="Ask AI to search... (e.g., 'AI features in Photoshop', 'how to remove backgrounds')"
+          placeholder="Search transcripts with natural language (e.g., 'AI features in Photoshop', 'how to remove backgrounds')"
           id="transcript-search">
         <button class="vortex-search-button">
-          <span style="margin-right: 6px;">✨</span>AI Search
+          AI Search
         </button>
       </div>
       <div class="vortex-filter-bar" style="margin-top: 16px;">
@@ -783,7 +782,6 @@ class VortexApp {
         <button class="vortex-filter-chip">Multi-Language</button>
       </div>
       <div class="vortex-empty-state" style="margin-top: 40px;">
-        <div style="font-size: 48px; opacity: 0.2; margin-bottom: 16px;">🔍</div>
         <div style="font-size: 18px; font-weight: 400; color: #505050; margin-bottom: 8px;">
           Search Video Transcriptions
         </div>
