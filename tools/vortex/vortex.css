@@ -578,9 +578,9 @@ body {
   background: #fff !important;
   border: none !important;
   border-radius: 16px !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  cursor: pointer !important;
+  position: relative !important;
   box-shadow: 0 4px 12px rgb(0 0 0 / 6%), 0 1px 3px rgb(0 0 0 / 4%) !important;
 }
 
@@ -600,6 +600,8 @@ body {
   font-size: 13px !important;
   color: rgb(255 255 255 / 80%) !important;
   font-weight: 600 !important;
+  border-radius: 16px 16px 0 0 !important;
+  overflow: hidden !important;
   text-transform: uppercase !important;
   letter-spacing: 1.2px !important;
 }
@@ -710,12 +712,17 @@ body {
   gap: 8px !important;
   padding-top: 16px !important;
   border-top: 1px solid #f3f4f6 !important;
+  position: relative !important;
+  z-index: 2 !important;
 }
 
 .vortex-video-action {
   flex: 1 !important;
   padding: 10px 14px !important;
   background: linear-gradient(135deg, #f9fafb 0%, #fff 100%) !important;
+  position: relative !important;
+  z-index: 3 !important;
+  cursor: pointer !important;
   border: 2px solid #e5e7eb !important;
   border-radius: 10px !important;
   cursor: pointer !important;
@@ -1418,6 +1425,433 @@ body {
   background: #f3f4f6 !important;
   padding: 4px 10px !important;
   border-radius: 6px !important;
+}
+
+/* Video Selection */
+.vortex-video-checkbox-wrapper {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  z-index: 10 !important;
+  pointer-events: all !important;
+}
+
+.vortex-video-checkbox {
+  width: 20px !important;
+  height: 20px !important;
+  cursor: pointer !important;
+  accent-color: #a855f7 !important;
+}
+
+.vortex-video-card.selected {
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 0 3px rgb(168 85 247 / 20%) !important;
+}
+
+/* LLM Tab Redesign */
+.vortex-llm-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  margin-bottom: 32px !important;
+}
+
+.vortex-selection-badge {
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%) !important;
+  color: white !important;
+  padding: 16px 24px !important;
+  border-radius: 12px !important;
+  text-align: center !important;
+  min-width: 120px !important;
+  box-shadow: 0 4px 12px rgb(168 85 247 / 30%) !important;
+}
+
+.vortex-selection-count {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  margin-bottom: 4px !important;
+}
+
+.vortex-selection-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  opacity: 0.9 !important;
+}
+
+.vortex-llm-empty-state {
+  text-align: center !important;
+  padding: 80px 20px !important;
+  background: #f9fafb !important;
+  border-radius: 12px !important;
+  border: 2px dashed #d1d5db !important;
+}
+
+.vortex-llm-empty-icon {
+  margin-bottom: 16px !important;
+}
+
+.vortex-selection-summary {
+  background: #f9fafb !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  margin-bottom: 32px !important;
+}
+
+.vortex-summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  gap: 24px !important;
+  align-items: center !important;
+}
+
+.vortex-summary-item {
+  text-align: center !important;
+}
+
+.vortex-summary-number {
+  font-size: 36px !important;
+  font-weight: 700 !important;
+  color: #a855f7 !important;
+  line-height: 1 !important;
+  margin-bottom: 8px !important;
+}
+
+.vortex-summary-label {
+  font-size: 13px !important;
+  color: #6b7280 !important;
+  font-weight: 500 !important;
+}
+
+.vortex-btn-link {
+  background: none !important;
+  border: none !important;
+  color: #a855f7 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
+  padding: 0 !important;
+}
+
+.vortex-btn-link:hover {
+  color: #7c3aed !important;
+}
+
+.vortex-llm-actions-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 24px !important;
+  margin-bottom: 40px !important;
+}
+
+.vortex-llm-action-card {
+  background: white !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  text-align: center !important;
+  transition: all 0.3s ease !important;
+}
+
+.vortex-llm-action-card:hover {
+  border-color: #a855f7 !important;
+  transform: translateY(-4px) !important;
+  box-shadow: 0 8px 24px rgb(168 85 247 / 15%) !important;
+}
+
+.vortex-llm-action-icon {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto 20px !important;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%) !important;
+}
+
+.vortex-llm-action-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  margin: 0 0 8px !important;
+}
+
+.vortex-llm-action-desc {
+  font-size: 14px !important;
+  color: #6b7280 !important;
+  line-height: 1.5 !important;
+  margin: 0 0 20px !important;
+}
+
+.vortex-btn-block {
+  width: 100% !important;
+}
+
+.vortex-selected-videos {
+  background: white !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+}
+
+.vortex-selected-videos-grid {
+  display: grid !important;
+  gap: 16px !important;
+}
+
+.vortex-selected-video-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 12px !important;
+  background: #f9fafb !important;
+  border-radius: 8px !important;
+  position: relative !important;
+}
+
+.vortex-selected-video-thumb {
+  width: 80px !important;
+  height: 45px !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+.vortex-selected-video-thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.vortex-selected-video-info {
+  flex: 1 !important;
+}
+
+.vortex-selected-video-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  margin-bottom: 4px !important;
+}
+
+.vortex-selected-video-meta {
+  font-size: 12px !important;
+  color: #6b7280 !important;
+}
+
+.vortex-needs-badge {
+  display: inline-block !important;
+  margin-left: 8px !important;
+  padding: 2px 8px !important;
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+}
+
+.vortex-selected-video-remove {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: #ef4444 !important;
+  color: white !important;
+  border: none !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.vortex-selected-video-remove:hover {
+  background: #dc2626 !important;
+  transform: scale(1.1) !important;
+}
+
+/* LLM Features Panel */
+.vortex-llm-panel {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%) !important;
+  border: 2px solid #a855f7 !important;
+}
+
+.vortex-llm-feature {
+  background: white !important;
+  padding: 16px !important;
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  border-left: 4px solid #a855f7 !important;
+  transition: all 0.2s ease !important;
+}
+
+.vortex-llm-feature:hover {
+  transform: translateX(4px) !important;
+  box-shadow: 0 4px 12px rgb(168 85 247 / 15%) !important;
+}
+
+.vortex-llm-feature-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 8px !important;
+}
+
+.vortex-llm-feature-header strong {
+  color: #5b21b6 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+.vortex-llm-badge-new {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.vortex-llm-description {
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  margin: 0 0 12px !important;
+}
+
+/* LLM Tab Styles */
+.vortex-llm-tab {
+  padding: 0 !important;
+}
+
+.vortex-llm-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+  gap: 24px !important;
+  margin-top: 24px !important;
+}
+
+.vortex-llm-card {
+  background: white !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  transition: all 0.3s ease !important;
+}
+
+.vortex-llm-card:hover {
+  border-color: #a855f7 !important;
+  box-shadow: 0 8px 24px rgb(168 85 247 / 15%) !important;
+  transform: translateY(-4px) !important;
+}
+
+.vortex-llm-card-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+  padding: 24px !important;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+.vortex-llm-card-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%) !important;
+}
+
+.vortex-llm-card-title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  margin: 0 0 4px !important;
+}
+
+.vortex-llm-card-subtitle {
+  font-size: 13px !important;
+  color: #6b7280 !important;
+  margin: 0 !important;
+}
+
+.vortex-llm-card-body {
+  padding: 24px !important;
+}
+
+.vortex-llm-feature-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 0 20px !important;
+}
+
+.vortex-llm-feature-list li {
+  color: #4b5563 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  padding: 8px 0 8px 24px !important;
+  position: relative !important;
+}
+
+.vortex-llm-feature-list li::before {
+  content: '✓' !important;
+  position: absolute !important;
+  left: 0 !important;
+  color: #10b981 !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+}
+
+.vortex-llm-card-actions {
+  display: flex !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.vortex-llm-card-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 16px 24px !important;
+  background: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+.vortex-llm-stat {
+  font-size: 12px !important;
+  color: #6b7280 !important;
+  font-weight: 500 !important;
+}
+
+/* AI Action Button Style */
+.vortex-video-action.vortex-ai-action {
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%) !important;
+  color: white !important;
+  border-color: #a855f7 !important;
+}
+
+.vortex-video-action.vortex-ai-action:hover {
+  background: linear-gradient(135deg, #9333ea 0%, #6d28d9 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgb(168 85 247 / 30%) !important;
+}
+
+/* Small Button Style */
+.vortex-btn-small {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
 }
 
 /* Load More Button */

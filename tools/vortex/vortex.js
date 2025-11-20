@@ -151,6 +151,7 @@ class VortexApp {
     this.totalVideosAvailable = MPC_VIDEO_IDS.length;
     this.currentFilter = 'all';
     this.currentLanguage = 'eng';
+    this.selectedVideos = new Set(); // Track selected video IDs
     this.init();
   }
 
@@ -331,8 +332,10 @@ class VortexApp {
     // Video card clicks
     document.querySelectorAll('.vortex-video-card').forEach((card) => {
       card.addEventListener('click', (e) => {
-        // Don't trigger if clicking a button
+        // Don't trigger if clicking a button or checkbox
         if (e.target.classList.contains('vortex-video-action')) return;
+        if (e.target.classList.contains('vortex-video-checkbox')) return;
+        if (e.target.closest('.vortex-video-checkbox-wrapper')) return;
         
         const videoId = card.dataset.videoId;
         const video = this.videos.find(v => v.id === videoId);
@@ -433,23 +436,13 @@ class VortexApp {
           <textarea 
             class="vortex-command-input" 
             id="vortex-command"
-            placeholder="Enter natural language commands...
+            placeholder="Enter your AI prompt...
 
-Smart Recommendations:
+Examples:
 • Recommend videos for beginners
-• Find tutorials about AI in Photoshop
-
-AI Collections:
-• Create collection of advanced content
-• Group videos by skill level
-
-Content Generation:
-• Generate 30-sec clips from chapters
-• Create highlight reel from video #1234
-
-AI Analysis:
-• Summarize this video
-• Extract key topics from transcripts"></textarea>
+• Create a collection of advanced Photoshop tutorials
+• Summarize video #12345
+• Find videos about AI features"></textarea>
           <div class="vortex-button-row">
             <button class="vortex-btn vortex-btn-primary" id="execute-btn">
               Execute Prompt
@@ -457,6 +450,56 @@ AI Analysis:
             <button class="vortex-btn vortex-btn-secondary" id="clear-btn">
               Clear
             </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderLLMFeaturesPanel() {
+    return `
+      <div class="vortex-panel vortex-llm-panel">
+        <div class="vortex-panel-header">
+          <h3 class="vortex-panel-title">
+            <span class="vortex-ai-badge">LLM</span>
+            Content Enhancement
+          </h3>
+        </div>
+        <div class="vortex-panel-body">
+          <div class="vortex-llm-feature">
+            <div class="vortex-llm-feature-header">
+              <strong>AI Titles & Summaries</strong>
+              <span class="vortex-llm-badge-new">NEW</span>
+            </div>
+            <p class="vortex-llm-description">Generate LLM-optimized titles and summaries distinct from SEO content</p>
+            <button class="vortex-btn vortex-btn-small" id="generate-titles-btn">Generate for Selected</button>
+          </div>
+
+          <div class="vortex-llm-feature">
+            <div class="vortex-llm-feature-header">
+              <strong>Smart Chapters</strong>
+              <span class="vortex-llm-badge-new">NEW</span>
+            </div>
+            <p class="vortex-llm-description">Auto-generate chapter markers with AI-powered scene detection</p>
+            <button class="vortex-btn vortex-btn-small" id="generate-chapters-btn">Generate Chapters</button>
+          </div>
+
+          <div class="vortex-llm-feature">
+            <div class="vortex-llm-feature-header">
+              <strong>AI Captions & Transcripts</strong>
+              <span class="vortex-llm-badge-new">NEW</span>
+            </div>
+            <p class="vortex-llm-description">Enhance captions with context-aware improvements and multi-language support</p>
+            <button class="vortex-btn vortex-btn-small" id="enhance-captions-btn">Enhance Captions</button>
+          </div>
+
+          <div class="vortex-llm-feature">
+            <div class="vortex-llm-feature-header">
+              <strong>VPOPS Integration</strong>
+              <span class="vortex-llm-badge-new">NEW</span>
+            </div>
+            <p class="vortex-llm-description">AI-powered video operations and intelligent processing workflows</p>
+            <button class="vortex-btn vortex-btn-small" id="vpops-process-btn">Process with VPOPS</button>
           </div>
         </div>
       </div>
@@ -516,8 +559,8 @@ AI Analysis:
   renderTabs() {
     const tabs = [
       { id: 'videos', label: 'Video Library' },
+      { id: 'llm', label: 'LLM Processing' },
       { id: 'collections', label: 'AI Collections' },
-      { id: 'processing', label: 'AI Processing' },
       { id: 'search', label: 'AI-Powered Search' },
     ];
 
@@ -537,8 +580,8 @@ AI Analysis:
   renderTabContent() {
     const content = {
       videos: this.renderVideosTab(),
+      llm: this.renderLLMTab(),
       collections: this.renderCollectionsTab(),
-      processing: this.renderProcessingTab(),
       search: this.renderSearchTab(),
     };
     return content[this.currentTab];
@@ -625,8 +668,18 @@ AI Analysis:
       ? `<img src="${video.thumbnail}" alt="${video.title}" class="vortex-video-thumb-img" onerror="this.style.display='none'; this.parentElement.classList.add('vortex-video-thumb-fallback');">` 
       : '';
     
+    const isSelected = this.selectedVideos.has(video.id);
+    
     return `
-      <div class="vortex-video-card" data-video-id="${video.id}">
+      <div class="vortex-video-card ${isSelected ? 'selected' : ''}" data-video-id="${video.id}">
+        <div class="vortex-video-checkbox-wrapper">
+          <input 
+            type="checkbox" 
+            class="vortex-video-checkbox" 
+            data-video-id="${video.id}"
+            ${isSelected ? 'checked' : ''}
+          />
+        </div>
         <div class="vortex-video-thumb ${!video.thumbnail ? 'vortex-video-thumb-fallback' : ''}" title="${video.thumbnail || 'No thumbnail'}">
           ${thumbnailHTML}
           <div class="vortex-video-category">${video.category || 'Video'}</div>
@@ -643,11 +696,162 @@ AI Analysis:
           </div>
           <div class="vortex-video-actions">
             <button class="vortex-video-action" data-action="view">View</button>
-            ${video.hasChapters ? '<button class="vortex-video-action" data-action="chapters">Chapters</button>' : ''}
+            ${video.hasChapters ? '<button class="vortex-video-action" data-action="chapters">Chapters</button>' : '<button class="vortex-video-action vortex-ai-action" data-action="generate-chapters">Generate Chapters</button>'}
             ${video.hasCaptions ? '<button class="vortex-video-action" data-action="captions">Captions</button>' : ''}
             <button class="vortex-video-action" data-action="transcript">Transcript</button>
+            <button class="vortex-video-action vortex-ai-action" data-action="ai-summary">AI Summary</button>
+            <button class="vortex-video-action vortex-ai-action" data-action="llm-title">LLM Title</button>
           </div>
         </div>
+      </div>
+    `;
+  }
+
+  renderLLMTab() {
+    const selectedCount = this.selectedVideos.size;
+    const selectedList = Array.from(this.selectedVideos)
+      .map(id => this.allVideos.find(v => v.id === id))
+      .filter(Boolean);
+    
+    return `
+      <div class="vortex-llm-tab">
+        <!-- Header with Selection Info -->
+        <div class="vortex-llm-header">
+          <div>
+            <h2 class="vortex-section-title">
+              <span class="vortex-ai-badge-inline">LLM</span>
+              Content Enhancement
+            </h2>
+            <p style="color: #6b7280; font-size: 14px; margin: 8px 0 0 0;">
+              Select videos from the Video Library tab, then apply AI enhancements here.
+            </p>
+          </div>
+          <div class="vortex-selection-badge">
+            <div class="vortex-selection-count">${selectedCount}</div>
+            <div class="vortex-selection-label">Selected</div>
+          </div>
+        </div>
+
+        ${selectedCount === 0 ? `
+          <!-- Empty State: No Selection -->
+          <div class="vortex-llm-empty-state">
+            <div class="vortex-llm-empty-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+              </svg>
+            </div>
+            <h3 style="color: #374151; font-size: 18px; margin: 16px 0 8px 0;">No Videos Selected</h3>
+            <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px 0;">
+              Go to the <strong>Video Library</strong> tab and select videos using the checkboxes.
+            </p>
+            <button class="vortex-btn vortex-btn-primary" onclick="document.querySelector('[data-tab=\\"videos\\"]').click()">
+              Go to Video Library
+            </button>
+          </div>
+        ` : `
+          <!-- Selection Summary -->
+          <div class="vortex-selection-summary">
+            <div class="vortex-summary-grid">
+              <div class="vortex-summary-item">
+                <div class="vortex-summary-number">${selectedCount}</div>
+                <div class="vortex-summary-label">Videos Selected</div>
+              </div>
+              <div class="vortex-summary-item">
+                <div class="vortex-summary-number">${selectedList.filter(v => !v.hasChapters).length}</div>
+                <div class="vortex-summary-label">Need Chapters</div>
+              </div>
+              <div class="vortex-summary-item">
+                <div class="vortex-summary-number">${selectedList.filter(v => v.hasCaptions).length}</div>
+                <div class="vortex-summary-label">Have Captions</div>
+              </div>
+              <div class="vortex-summary-item">
+                <button class="vortex-btn-link" id="clear-selection">Clear Selection</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enhancement Actions -->
+          <div class="vortex-llm-actions-grid">
+            <div class="vortex-llm-action-card">
+              <div class="vortex-llm-action-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </div>
+              <h3 class="vortex-llm-action-title">LLM Titles & Summaries</h3>
+              <p class="vortex-llm-action-desc">Generate engagement-optimized metadata separate from SEO content</p>
+              <button class="vortex-btn vortex-btn-primary vortex-btn-block" id="batch-generate-titles">
+                Generate for ${selectedCount} Video${selectedCount !== 1 ? 's' : ''}
+              </button>
+            </div>
+
+            <div class="vortex-llm-action-card">
+              <div class="vortex-llm-action-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                  <line x1="7" y1="2" x2="7" y2="22"></line>
+                  <line x1="17" y1="2" x2="17" y2="22"></line>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                </svg>
+              </div>
+              <h3 class="vortex-llm-action-title">AI Chapters</h3>
+              <p class="vortex-llm-action-desc">Auto-generate chapters with meaningful titles from transcripts</p>
+              <button class="vortex-btn vortex-btn-primary vortex-btn-block" id="batch-generate-chapters">
+                Generate Chapters
+              </button>
+            </div>
+
+            <div class="vortex-llm-action-card">
+              <div class="vortex-llm-action-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+              <h3 class="vortex-llm-action-title">Caption Enhancement</h3>
+              <p class="vortex-llm-action-desc">Fix errors, add formatting, and improve accessibility</p>
+              <button class="vortex-btn vortex-btn-primary vortex-btn-block" id="enhance-all-captions">
+                Enhance Captions
+              </button>
+            </div>
+
+            <div class="vortex-llm-action-card">
+              <div class="vortex-llm-action-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </div>
+              <h3 class="vortex-llm-action-title">VPOPS Processing</h3>
+              <p class="vortex-llm-action-desc">Intelligent video operations and batch processing</p>
+              <button class="vortex-btn vortex-btn-primary vortex-btn-block" id="vpops-process">
+                Process Videos
+              </button>
+            </div>
+          </div>
+
+          <!-- Selected Videos List -->
+          <div class="vortex-selected-videos">
+            <h3 style="font-size: 16px; color: #1f2937; margin: 0 0 16px 0;">Selected Videos</h3>
+            <div class="vortex-selected-videos-grid">
+              ${selectedList.map(video => `
+                <div class="vortex-selected-video-item">
+                  <div class="vortex-selected-video-thumb" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    ${video.thumbnail ? `<img src="${video.thumbnail}" alt="${video.title}">` : ''}
+                  </div>
+                  <div class="vortex-selected-video-info">
+                    <div class="vortex-selected-video-title">${video.title}</div>
+                    <div class="vortex-selected-video-meta">
+                      ${video.duration} • ${video.category}
+                      ${!video.hasChapters ? '<span class="vortex-needs-badge">Needs Chapters</span>' : ''}
+                    </div>
+                  </div>
+                  <button class="vortex-selected-video-remove" data-video-id="${video.id}" title="Remove from selection">×</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `}
       </div>
     `;
   }
@@ -902,6 +1106,63 @@ AI Analysis:
       });
     }
 
+    // Video selection checkboxes
+    document.querySelectorAll('.vortex-video-checkbox').forEach((checkbox) => {
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation(); // Prevent triggering card click
+        const videoId = e.target.dataset.videoId;
+        const card = e.target.closest('.vortex-video-card');
+        
+        if (e.target.checked) {
+          this.selectedVideos.add(videoId);
+          card.classList.add('selected');
+        } else {
+          this.selectedVideos.delete(videoId);
+          card.classList.remove('selected');
+        }
+        
+        // Update LLM tab if it's active
+        if (this.currentTab === 'llm') {
+          this.updateView();
+        }
+      });
+      
+      // Also prevent click events on the checkbox wrapper from bubbling
+      checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    });
+
+    // Clear selection button
+    const clearSelectionBtn = document.getElementById('clear-selection');
+    if (clearSelectionBtn) {
+      clearSelectionBtn.addEventListener('click', () => {
+        this.selectedVideos.clear();
+        document.querySelectorAll('.vortex-video-checkbox').forEach((cb) => cb.checked = false);
+        document.querySelectorAll('.vortex-video-card').forEach((card) => card.classList.remove('selected'));
+        this.updateView();
+        this.showNotification('Selection cleared', 'success');
+      });
+    }
+
+    // Remove from selection buttons
+    document.querySelectorAll('.vortex-selected-video-remove').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const videoId = e.target.dataset.videoId;
+        this.selectedVideos.delete(videoId);
+        
+        // Uncheck the checkbox in video library
+        const checkbox = document.querySelector(`.vortex-video-checkbox[data-video-id="${videoId}"]`);
+        if (checkbox) {
+          checkbox.checked = false;
+          checkbox.closest('.vortex-video-card')?.classList.remove('selected');
+        }
+        
+        this.updateView();
+        this.showNotification('Video removed from selection', 'success');
+      });
+    });
+
     // Attach video card listeners (initial load)
     this.attachVideoCardListeners();
   }
@@ -1021,9 +1282,201 @@ AI Analysis:
         this.fetchAndShowTranscript(video);
         break;
         
+      case 'generate-chapters':
+        this.generateChaptersWithLLM(video);
+        break;
+        
+      case 'ai-summary':
+        this.generateAISummary(video);
+        break;
+        
+      case 'llm-title':
+        this.generateLLMTitle(video);
+        break;
+        
       default:
         this.showNotification(`Action "${action}" coming soon!`, 'info');
     }
+  }
+
+  // LLM Feature Methods
+  generateChaptersWithLLM(video) {
+    this.showModal(
+      'AI Chapter Generation',
+      `
+        <div class="vortex-modal-section">
+          <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h4 style="color: #0c4a6e; margin: 0 0 12px 0;">How AI Chapter Generation Works</h4>
+            <p style="color: #075985; font-size: 14px; margin: 0 0 12px 0;">
+              AWS Bedrock analyzes the video transcript to identify natural topic transitions and key moments, 
+              then generates meaningful chapter titles and timestamps.
+            </p>
+            <ul style="color: #075985; font-size: 13px; margin: 0; padding-left: 20px;">
+              <li>Automatic scene detection from transcript</li>
+              <li>Topic-based segmentation</li>
+              <li>Descriptive chapter titles (not just "Chapter 1")</li>
+              <li>Optimal chapter length (5-8 chapters recommended)</li>
+            </ul>
+          </div>
+          
+          <h4 style="margin: 0 0 12px 0;">Video: ${video.title}</h4>
+          <p style="color: #6b7280; margin-bottom: 20px;">Duration: ${video.duration}</p>
+          
+          <div style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px;">
+            <strong style="color: #92400e; display: block; margin-bottom: 8px;">Preview Mode - Demo</strong>
+            <p style="color: #78350f; font-size: 13px; margin: 0;">
+              In production, this would call AWS Bedrock to analyze the transcript and generate chapters. 
+              Example output would include 5-8 chapters with timestamps and descriptive titles.
+            </p>
+          </div>
+          
+          <div style="background: #f3f4f6; padding: 16px; border-radius: 8px;">
+            <strong style="display: block; margin-bottom: 12px;">Expected AI Output:</strong>
+            <div style="font-family: monospace; font-size: 12px; color: #374151;">
+              <div style="margin-bottom: 8px;">00:00 - Introduction & Overview</div>
+              <div style="margin-bottom: 8px;">02:15 - Setting Up Your Workspace</div>
+              <div style="margin-bottom: 8px;">05:30 - Core Features Walkthrough</div>
+              <div style="margin-bottom: 8px;">08:45 - Advanced Techniques</div>
+              <div style="margin-bottom: 8px;">12:20 - Tips & Best Practices</div>
+              <div>14:10 - Conclusion & Next Steps</div>
+            </div>
+          </div>
+        </div>
+      `,
+      [
+        { label: 'Close', primary: false, action: () => this.closeModal() },
+        { label: 'Generate Chapters (Demo)', primary: true, action: () => {
+          this.closeModal();
+          this.showNotification('AWS Bedrock integration ready - connect to generate real chapters', 'info');
+        }}
+      ]
+    );
+  }
+
+  generateAISummary(video) {
+    this.showModal(
+      'AI Video Summary',
+      `
+        <div class="vortex-modal-section">
+          <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h4 style="color: #14532d; margin: 0 0 12px 0;">LLM-Powered Summarization</h4>
+            <p style="color: #166534; font-size: 14px; margin: 0;">
+              Creates engagement-optimized summaries that differ from SEO descriptions. Tailored for human readers 
+              who want to quickly understand the value and content of the video.
+            </p>
+          </div>
+          
+          <h4 style="margin: 0 0 8px 0;">${video.title}</h4>
+          <p style="color: #6b7280; font-size: 13px; margin-bottom: 20px;">Video ID: ${video.mpcId}</p>
+          
+          <div style="background: #fff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 8px; margin-bottom: 16px;">
+            <strong style="display: block; margin-bottom: 12px; color: #1f2937;">SEO Description (Current):</strong>
+            <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0;">
+              ${video.description || 'Standard video description optimized for search engines and metadata.'}
+            </p>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 2px solid #a855f7; padding: 20px; border-radius: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <span style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color: white; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 4px;">LLM GENERATED</span>
+              <strong style="color: #5b21b6;">Enhanced Summary:</strong>
+            </div>
+            <p style="color: #6b21a8; font-size: 14px; line-height: 1.7; margin: 0 0 16px 0;">
+              <em>This would contain the AI-generated summary focused on learning outcomes, key topics, 
+              target audience, and what viewers will be able to do after watching. It emphasizes value 
+              and engagement over keyword optimization.</em>
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+              <div>
+                <strong style="color: #7c3aed; display: block; margin-bottom: 4px;">Skill Level:</strong>
+                <span style="color: #6b21a8;">Intermediate</span>
+              </div>
+              <div>
+                <strong style="color: #7c3aed; display: block; margin-bottom: 4px;">Duration:</strong>
+                <span style="color: #6b21a8;">${video.duration}</span>
+              </div>
+              <div>
+                <strong style="color: #7c3aed; display: block; margin-bottom: 4px;">Prerequisites:</strong>
+                <span style="color: #6b21a8;">Basic Photoshop</span>
+              </div>
+              <div>
+                <strong style="color: #7c3aed; display: block; margin-bottom: 4px;">Key Topics:</strong>
+                <span style="color: #6b21a8;">3 main topics</span>
+              </div>
+            </div>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-top: 20px;">
+            <p style="color: #78350f; font-size: 13px; margin: 0;">
+              <strong>Demo Mode:</strong> Connect AWS Bedrock to generate real LLM summaries from video transcripts.
+            </p>
+          </div>
+        </div>
+      `,
+      [
+        { label: 'Close', primary: false, action: () => this.closeModal() },
+        { label: 'Generate Summary (Demo)', primary: true, action: () => {
+          this.closeModal();
+          this.showNotification('AWS Bedrock integration ready - connect to generate real summaries', 'info');
+        }}
+      ]
+    );
+  }
+
+  generateLLMTitle(video) {
+    this.showModal(
+      'LLM Title Generation',
+      `
+        <div class="vortex-modal-section">
+          <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h4 style="color: #1e3a8a; margin: 0 0 12px 0;">SEO vs LLM Titles</h4>
+            <p style="color: #1e40af; font-size: 14px; margin: 0 0 12px 0;">
+              SEO titles are optimized for search algorithms. LLM titles are optimized for human engagement, 
+              highlighting specific value propositions and learning outcomes.
+            </p>
+            <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+              <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">SEO Title:</div>
+              <div style="color: #1f2937; font-weight: 600;">"Adobe Photoshop Tutorial 2024 - Beginner Guide"</div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 6px;">
+              <div style="color: #7c3aed; font-size: 12px; margin-bottom: 4px;">LLM Title:</div>
+              <div style="color: #5b21b6; font-weight: 600;">"Master AI-powered background removal in 15 minutes - No experience needed"</div>
+            </div>
+          </div>
+          
+          <h4 style="margin: 0 0 8px 0;">Current Video</h4>
+          <div style="background: #f9fafb; border: 2px solid #e5e7eb; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <div style="color: #6b7280; font-size: 12px; margin-bottom: 8px;">Current SEO Title:</div>
+            <div style="color: #1f2937; font-size: 16px; font-weight: 600;">${video.title}</div>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 2px solid #a855f7; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color: white; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 4px;">LLM GENERATED</span>
+              <div style="color: #5b21b6; font-size: 12px;">AI-Optimized Title:</div>
+            </div>
+            <div style="color: #6b21a8; font-size: 16px; font-weight: 600; line-height: 1.5;">
+              <em>AI would analyze the transcript and generate 3-5 title variants focused on specific value, 
+              target audience, and key outcomes. Each variant would emphasize different aspects.</em>
+            </div>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <p style="color: #78350f; font-size: 13px; margin: 0;">
+              <strong>Demo Mode:</strong> AWS Bedrock would generate multiple title variants. You could A/B test 
+              different titles for different platforms (YouTube, social media, LMS, etc.).
+            </p>
+          </div>
+        </div>
+      `,
+      [
+        { label: 'Close', primary: false, action: () => this.closeModal() },
+        { label: 'Generate Titles (Demo)', primary: true, action: () => {
+          this.closeModal();
+          this.showNotification('AWS Bedrock integration ready - connect to generate real LLM titles', 'info');
+        }}
+      ]
+    );
   }
 
   showChapters(video) {
