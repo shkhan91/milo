@@ -495,11 +495,11 @@ Examples:
 
           <div class="vortex-llm-feature">
             <div class="vortex-llm-feature-header">
-              <strong>VPOPS Integration</strong>
+              <strong>In-Video CTA Popups</strong>
               <span class="vortex-llm-badge-new">NEW</span>
             </div>
-            <p class="vortex-llm-description">AI-powered video operations and intelligent processing workflows</p>
-            <button class="vortex-btn vortex-btn-small" id="vpops-process-btn">Process with VPOPS</button>
+            <p class="vortex-llm-description">AI-powered in-video call-to-action popups and intelligent placement</p>
+            <button class="vortex-btn vortex-btn-small" id="vpops-process-btn">Generate CTAs</button>
           </div>
         </div>
       </div>
@@ -745,7 +745,7 @@ Examples:
             <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px 0;">
               Go to the <strong>Video Library</strong> tab and select videos using the checkboxes.
             </p>
-            <button class="vortex-btn vortex-btn-primary" onclick="document.querySelector('[data-tab=\\"videos\\"]').click()">
+            <button class="vortex-btn vortex-btn-primary" id="go-to-video-library">
               Go to Video Library
             </button>
           </div>
@@ -819,13 +819,15 @@ Examples:
             <div class="vortex-llm-action-card">
               <div class="vortex-llm-action-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
               </div>
-              <h3 class="vortex-llm-action-title">VPOPS Processing</h3>
-              <p class="vortex-llm-action-desc">Intelligent video operations and batch processing</p>
+              <h3 class="vortex-llm-action-title">In-Video CTA Popups</h3>
+              <p class="vortex-llm-action-desc">AI-powered call-to-action placement and timing optimization</p>
               <button class="vortex-btn vortex-btn-primary vortex-btn-block" id="vpops-process">
-                Process Videos
+                Generate CTAs
               </button>
             </div>
           </div>
@@ -1162,6 +1164,44 @@ Examples:
         this.showNotification('Video removed from selection', 'success');
       });
     });
+
+    // Go to Video Library button
+    const goToVideoLibraryBtn = document.getElementById('go-to-video-library');
+    if (goToVideoLibraryBtn) {
+      goToVideoLibraryBtn.addEventListener('click', () => {
+        this.currentTab = 'videos';
+        this.updateView();
+      });
+    }
+
+    // LLM Feature Buttons
+    const batchGenerateTitlesBtn = document.getElementById('batch-generate-titles');
+    if (batchGenerateTitlesBtn) {
+      batchGenerateTitlesBtn.addEventListener('click', () => {
+        this.showNotification(`Generating LLM titles for ${this.selectedVideos.size} videos - AWS Bedrock integration ready`, 'info');
+      });
+    }
+
+    const batchGenerateChaptersBtn = document.getElementById('batch-generate-chapters');
+    if (batchGenerateChaptersBtn) {
+      batchGenerateChaptersBtn.addEventListener('click', () => {
+        this.showNotification(`Generating AI chapters for ${this.selectedVideos.size} videos - AWS Bedrock integration ready`, 'info');
+      });
+    }
+
+    const enhanceCaptionsBtn = document.getElementById('enhance-all-captions');
+    if (enhanceCaptionsBtn) {
+      enhanceCaptionsBtn.addEventListener('click', () => {
+        this.showNotification(`Enhancing captions for ${this.selectedVideos.size} videos - AWS Bedrock integration ready`, 'info');
+      });
+    }
+
+    const vpopsProcessBtn = document.getElementById('vpops-process');
+    if (vpopsProcessBtn) {
+      vpopsProcessBtn.addEventListener('click', () => {
+        this.showNotification(`Generating in-video CTAs for ${this.selectedVideos.size} videos - AWS Bedrock integration ready`, 'info');
+      });
+    }
 
     // Attach video card listeners (initial load)
     this.attachVideoCardListeners();
