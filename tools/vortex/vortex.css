@@ -578,10 +578,12 @@ body {
   background: #fff !important;
   border: none !important;
   border-radius: 16px !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   position: relative !important;
   box-shadow: 0 4px 12px rgb(0 0 0 / 6%), 0 1px 3px rgb(0 0 0 / 4%) !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .vortex-video-card:hover {
@@ -673,6 +675,9 @@ body {
 
 .vortex-video-info {
   padding: 20px !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .vortex-video-description {
@@ -711,9 +716,11 @@ body {
   display: flex !important;
   gap: 8px !important;
   padding-top: 16px !important;
+  margin-top: auto !important;
   border-top: 1px solid #f3f4f6 !important;
   position: relative !important;
   z-index: 2 !important;
+  flex-wrap: wrap !important;
 }
 
 .vortex-video-action {
@@ -725,7 +732,6 @@ body {
   cursor: pointer !important;
   border: 2px solid #e5e7eb !important;
   border-radius: 10px !important;
-  cursor: pointer !important;
   transition: all 0.2s ease !important;
   font-family: var(--body-font-family, 'Adobe Clean', sans-serif) !important;
   font-size: 12px !important;
@@ -1432,8 +1438,12 @@ body {
   position: absolute !important;
   top: 12px !important;
   left: 12px !important;
-  z-index: 10 !important;
+  z-index: 100 !important;
   pointer-events: all !important;
+  background: rgb(255 255 255 / 90%) !important;
+  backdrop-filter: blur(4px) !important;
+  padding: 4px !important;
+  border-radius: 6px !important;
 }
 
 .vortex-video-checkbox {
