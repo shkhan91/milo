@@ -577,9 +577,9 @@
     };
 
     // Initialize on load
-    (async function() {
-      log('Vortex Backend Debugger initialized', 'info');
-      log('Initializing Adobe IMS...', 'info');
+    window.addEventListener('DOMContentLoaded', async () => {
+      console.log('[Vortex] Initializing...');
+      console.log('[Vortex] Initializing Adobe IMS...');
       
       try {
         await initializeIMS();
@@ -587,25 +587,32 @@
         // Check if already authenticated
         const token = window.adobeIMS?.getAccessToken()?.token;
         if (token) {
-          log('✓ Already authenticated with Adobe IMS', 'success');
-          log(`Token: ${token.substring(0, 20)}...`, 'info');
+          console.log('[Vortex] ✓ Already authenticated with Adobe IMS');
+          console.log(`[Vortex] Token: ${token.substring(0, 20)}...`);
+          
+          // Show success message in UI
+          const statusEl = document.getElementById('status');
+          if (statusEl) {
+            statusEl.textContent = 'IMS Ready';
+            statusEl.classList.remove('disconnected');
+            statusEl.classList.add('connected');
+          }
           
           // Auto-test if authenticated
           setTimeout(() => {
-            log('Auto-testing connection...', 'info');
-            testConnection();
+            console.log('[Vortex] Auto-testing connection...');
+            testConnection().catch(e => console.error('[Vortex] Auto-test failed:', e));
           }, 1000);
         } else {
-          log('⚠ Not authenticated. You will need to sign in to test backend.', 'warn');
-          log('Click any test button to see the sign-in prompt.', 'info');
+          console.warn('[Vortex] ⚠ Not authenticated. You will need to sign in to test backend.');
+          console.log('[Vortex] Click any test button to see the sign-in prompt.');
         }
       } catch (error) {
-        log('✗ Failed to initialize Adobe IMS', 'error', error);
+        console.error('[Vortex] ✗ Failed to initialize Adobe IMS:', error);
       }
       
-      log('', 'info');
-      log('Ready to test!', 'info');
-    })();
+      console.log('[Vortex] Ready to test!');
+    });
   </script>
 </body>
 </html>
