@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vortex Backend Debugger</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: #252526;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #007acc;
+    }
+
+    h1 {
+      color: #4ec9b0;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      color: #dcdcaa;
+      font-size: 18px;
+      margin: 20px 0 10px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #3e3e42;
+    }
+
+    h3 {
+      color: #9cdcfe;
+      font-size: 14px;
+      margin: 16px 0 8px 0;
+    }
+
+    .section {
+      background: #252526;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .test-card {
+      background: #2d2d30;
+      padding: 16px;
+      border-radius: 6px;
+      border-left: 3px solid #3e3e42;
+    }
+
+    .test-card.success {
+      border-left-color: #4ec9b0;
+    }
+
+    .test-card.error {
+      border-left-color: #f48771;
+    }
+
+    .test-card.pending {
+      border-left-color: #dcdcaa;
+    }
+
+    button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      margin: 5px 5px 5px 0;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #1177bb;
+    }
+
+    button:disabled {
+      background: #3e3e42;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #3e3e42;
+    }
+
+    button.secondary:hover {
+      background: #4e4e52;
+    }
+
+    .log {
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 12px;
+      margin-top: 16px;
+      border: 1px solid #3e3e42;
+    }
+
+    .log-entry {
+      margin-bottom: 8px;
+      padding: 6px;
+      border-left: 2px solid #3e3e42;
+      padding-left: 12px;
+    }
+
+    .log-entry.info {
+      border-left-color: #4fc1ff;
+    }
+
+    .log-entry.success {
+      border-left-color: #4ec9b0;
+    }
+
+    .log-entry.error {
+      border-left-color: #f48771;
+    }
+
+    .log-entry.warn {
+      border-left-color: #dcdcaa;
+    }
+
+    .log-time {
+      color: #858585;
+      font-size: 11px;
+      margin-right: 8px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    .status-badge.success {
+      background: #4ec9b0;
+      color: #1e1e1e;
+    }
+
+    .status-badge.error {
+      background: #f48771;
+      color: #1e1e1e;
+    }
+
+    .status-badge.pending {
+      background: #dcdcaa;
+      color: #1e1e1e;
+    }
+
+    .code-block {
+      background: #1e1e1e;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      overflow-x: auto;
+      border: 1px solid #3e3e42;
+      margin: 8px 0;
+    }
+
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .checklist li {
+      padding: 8px 0;
+      border-bottom: 1px solid #3e3e42;
+    }
+
+    .checklist li:before {
+      content: "☐ ";
+      color: #858585;
+      font-size: 16px;
+      margin-right: 8px;
+    }
+
+    .checklist li.checked:before {
+      content: "☑ ";
+      color: #4ec9b0;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .highlight {
+      color: #ce9178;
+    }
+
+    .url {
+      color: #4fc1ff;
+    }
+
+    .key {
+      color: #9cdcfe;
+    }
+
+    .value {
+      color: #ce9178;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 Vortex Backend Debugger</h1>
+      <p>Comprehensive debugging tool for Adobe I/O Runtime integration</p>
+    </div>
+
+    <div class="section">
+      <h2>Quick Diagnostics</h2>
+      <div class="test-grid">
+        <div class="test-card" id="network-test">
+          <h3>Network Connectivity</h3>
+          <p style="font-size: 12px; color: #858585; margin-bottom: 12px;">Can we reach the internet?</p>
+          <button onclick="testNetwork()">Test Network</button>
+        </div>
+
+        <div class="test-card" id="endpoint-test">
+          <h3>Endpoint Accessibility</h3>
+          <p style="font-size: 12px; color: #858585; margin-bottom: 12px;">Can we reach your backend?</p>
+          <button onclick="testEndpoint()">Test Endpoint</button>
+        </div>
+
+        <div class="test-card" id="cors-test">
+          <h3>CORS Configuration</h3>
+          <p style="font-size: 12px; color: #858585; margin-bottom: 12px;">Are CORS headers configured?</p>
+          <button onclick="testCORS()">Test CORS</button>
+        </div>
+
+        <div class="test-card" id="auth-test">
+          <h3>Authentication</h3>
+          <p style="font-size: 12px; color: #858585; margin-bottom: 12px;">Is the auth token valid?</p>
+          <button onclick="testAuth()">Test Auth</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Detailed Tests</h2>
+      <button onclick="testAll()">Run All Tests</button>
+      <button onclick="clearLogs()" class="secondary">Clear Logs</button>
+      <button onclick="copyLogs()" class="secondary">Copy Logs</button>
+      
+      <div class="log" id="debug-log"></div>
+    </div>
+
+    <div class="section">
+      <h2>Common Issues & Solutions</h2>
+      <ul class="checklist" id="checklist">
+        <li>Backend endpoints are deployed and running</li>
+        <li>CORS headers are configured (Access-Control-Allow-Origin)</li>
+        <li>Authentication token is valid and not expired</li>
+        <li>Request payload format matches backend expectations</li>
+        <li>Response format includes {success: true/false}</li>
+        <li>Network firewall is not blocking requests</li>
+        <li>Backend is returning JSON (not HTML error pages)</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Expected Backend Configuration</h2>
+      <h3>CORS Headers (Required):</h3>
+      <div class="code-block">
+<pre>{
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400"
+}</pre>
+      </div>
+
+      <h3>Request Format:</h3>
+      <div class="code-block">
+<pre>POST /api/v1/web/vortex/[action]
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer [token]
+Body:
+  {
+    "videos": [...],
+    "options": {...}
+  }</pre>
+      </div>
+
+      <h3>Response Format:</h3>
+      <div class="code-block">
+<pre>{
+  "success": true,
+  "results": [...],
+  "cost": 0.05,
+  "executionTime": 1234
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import vortexApi from './vortexApi.js';
+    
+    const logs = [];
+    
+    function log(message, type = 'info', data = null) {
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = { timestamp, message, type, data };
+      logs.push(entry);
+      
+      const logEl = document.getElementById('debug-log');
+      const entryEl = document.createElement('div');
+      entryEl.className = `log-entry ${type}`;
+      
+      let content = `<span class="log-time">${timestamp}</span> ${message}`;
+      if (data) {
+        content += `\n<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      }
+      
+      entryEl.innerHTML = content;
+      logEl.appendChild(entryEl);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateTestCard(cardId, status, message) {
+      const card = document.getElementById(cardId);
+      card.classList.remove('success', 'error', 'pending');
+      card.classList.add(status);
+      
+      let statusEl = card.querySelector('.status-badge');
+      if (!statusEl) {
+        statusEl = document.createElement('span');
+        statusEl.className = 'status-badge';
+        card.querySelector('h3').appendChild(statusEl);
+      }
+      
+      statusEl.className = `status-badge ${status}`;
+      statusEl.textContent = status.toUpperCase();
+      
+      if (message) {
+        let msgEl = card.querySelector('.status-message');
+        if (!msgEl) {
+          msgEl = document.createElement('p');
+          msgEl.className = 'status-message';
+          msgEl.style.fontSize = '11px';
+          msgEl.style.marginTop = '8px';
+          msgEl.style.color = '#858585';
+          card.appendChild(msgEl);
+        }
+        msgEl.textContent = message;
+      }
+    }
+
+    window.testNetwork = async function() {
+      log('Testing network connectivity...', 'info');
+      updateTestCard('network-test', 'pending', 'Testing...');
+      
+      try {
+        const response = await fetch('https://www.google.com', { mode: 'no-cors' });
+        log('✓ Network is accessible', 'success');
+        updateTestCard('network-test', 'success', 'Connected');
+        return true;
+      } catch (error) {
+        log('✗ Network test failed', 'error', error);
+        updateTestCard('network-test', 'error', error.message);
+        return false;
+      }
+    };
+
+    window.testEndpoint = async function() {
+      log('Testing endpoint accessibility...', 'info');
+      updateTestCard('endpoint-test', 'pending', 'Testing...');
+      
+      const endpoint = 'https://14257-vortex-stage.adobeio-static.net/api/v1/web/vortex/sample';
+      log(`Endpoint: ${endpoint}`, 'info');
+      
+      try {
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        log(`Response status: ${response.status} ${response.statusText}`, 'info');
+        log(`Response headers:`, 'info', Object.fromEntries(response.headers.entries()));
+        
+        const text = await response.text();
+        log(`Response body:`, 'info', text.substring(0, 500));
+        
+        if (response.ok) {
+          log('✓ Endpoint is accessible', 'success');
+          updateTestCard('endpoint-test', 'success', `Status: ${response.status}`);
+          return true;
+        } else {
+          log('✗ Endpoint returned error status', 'error');
+          updateTestCard('endpoint-test', 'error', `Status: ${response.status}`);
+          return false;
+        }
+      } catch (error) {
+        log('✗ Cannot reach endpoint', 'error', error);
+        updateTestCard('endpoint-test', 'error', error.message);
+        
+        if (error.message.includes('Failed to fetch')) {
+          log('⚠ This is likely a CORS issue or network problem', 'warn');
+        }
+        
+        return false;
+      }
+    };
+
+    window.testCORS = async function() {
+      log('Testing CORS configuration...', 'info');
+      updateTestCard('cors-test', 'pending', 'Testing...');
+      
+      const endpoint = 'https://14257-vortex-stage.adobeio-static.net/api/v1/web/vortex/sample';
+      
+      try {
+        const response = await fetch(endpoint, {
+          method: 'OPTIONS',
+          headers: {
+            'Origin': window.location.origin,
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+          }
+        });
+        
+        log(`CORS preflight status: ${response.status}`, 'info');
+        
+        const corsHeaders = {
+          'Access-Control-Allow-Origin': response.headers.get('access-control-allow-origin'),
+          'Access-Control-Allow-Methods': response.headers.get('access-control-allow-methods'),
+          'Access-Control-Allow-Headers': response.headers.get('access-control-allow-headers'),
+        };
+        
+        log('CORS headers:', 'info', corsHeaders);
+        
+        if (corsHeaders['Access-Control-Allow-Origin']) {
+          log('✓ CORS headers are present', 'success');
+          updateTestCard('cors-test', 'success', 'CORS configured');
+          return true;
+        } else {
+          log('✗ CORS headers are missing', 'error');
+          log('⚠ Backend must return Access-Control-Allow-Origin header', 'warn');
+          updateTestCard('cors-test', 'error', 'CORS not configured');
+          return false;
+        }
+      } catch (error) {
+        log('✗ CORS test failed', 'error', error);
+        updateTestCard('cors-test', 'error', error.message);
+        return false;
+      }
+    };
+
+    window.testAuth = async function() {
+      log('Testing authentication...', 'info');
+      updateTestCard('auth-test', 'pending', 'Testing...');
+      
+      const token = vortexApi.getToken();
+      log(`Token: ${token ? token.substring(0, 20) + '...' : 'NO TOKEN'}`, 'info');
+      
+      if (!token || token === 'sandbox-token') {
+        log('⚠ Using sandbox token (development mode)', 'warn');
+        updateTestCard('auth-test', 'pending', 'Using sandbox token');
+        return false;
+      }
+      
+      try {
+        const result = await vortexApi.testConnection();
+        log('✓ Authentication successful', 'success', result);
+        updateTestCard('auth-test', 'success', 'Token valid');
+        return true;
+      } catch (error) {
+        log('✗ Authentication failed', 'error', error);
+        updateTestCard('auth-test', 'error', error.message);
+        return false;
+      }
+    };
+
+    window.testAll = async function() {
+      log('=== STARTING COMPREHENSIVE TEST SUITE ===', 'info');
+      log('', 'info');
+      
+      await testNetwork();
+      log('', 'info');
+      
+      await testEndpoint();
+      log('', 'info');
+      
+      await testCORS();
+      log('', 'info');
+      
+      await testAuth();
+      log('', 'info');
+      
+      log('=== TEST SUITE COMPLETE ===', 'info');
+      log('Check the results above to identify issues', 'info');
+    };
+
+    window.clearLogs = function() {
+      logs.length = 0;
+      document.getElementById('debug-log').innerHTML = '';
+    };
+
+    window.copyLogs = function() {
+      const text = logs.map(l => `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`).join('\n');
+      navigator.clipboard.writeText(text);
+      log('✓ Logs copied to clipboard', 'success');
+    };
+
+    // Auto-run tests on load
+    setTimeout(() => {
+      log('Vortex Backend Debugger initialized', 'info');
+      log('Click "Run All Tests" or test individual components', 'info');
+      log('', 'info');
+    }, 100);
+  </script>
+</body>
+</html>
+
