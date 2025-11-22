@@ -312,9 +312,95 @@
 
   <script type="module">
     import vortexApi from './vortexApi.js';
-
+    
     // Make API available globally for onclick handlers
     window.vortexApi = vortexApi;
+
+    // Initialize Adobe IMS (same as send-to-caas)
+    const IMS_CLIENT_ID = 'milo_ims';
+    const IMS_PROD_URL = 'https://auth.services.adobe.com/imslib/imslib.min.js';
+    
+    async function initializeIMS() {
+      window.adobeid = {
+        client_id: IMS_CLIENT_ID,
+        environment: 'prod',
+        scope: 'AdobeID,openid',
+      };
+
+      if (!window.adobeIMS) {
+        await loadImsScript();
+      }
+    }
+
+    function loadImsScript() {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = IMS_PROD_URL;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    async function checkAuthentication() {
+      await initializeIMS();
+      
+      const token = window.adobeIMS?.getAccessToken()?.token;
+      if (!token) {
+        showAuthWarning();
+        return false;
+      }
+      return true;
+    }
+
+    function showAuthWarning() {
+      const authWarning = document.createElement('div');
+      authWarning.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 500px;
+        text-align: center;
+      `;
+      
+      authWarning.innerHTML = `
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 12px;">
+          🔐 Authentication Required
+        </div>
+        <div style="margin-bottom: 16px; line-height: 1.6;">
+          You need to sign in with your Adobe ID to test the backend.
+        </div>
+        <button onclick="signInWithAdobe()" style="
+          background: white;
+          color: #d97706;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          font-size: 14px;
+        ">
+          Sign In with Adobe
+        </button>
+      `;
+      
+      document.body.appendChild(authWarning);
+    }
+
+    window.signInWithAdobe = function() {
+      if (window.adobeIMS) {
+        window.adobeIMS.signIn();
+      } else {
+        alert('Adobe IMS not loaded. Please refresh the page.');
+      }
+    };
 
     // Helper to show results
     window.showResult = function(elementId, result, isError = false) {
@@ -347,6 +433,15 @@
     // Test connection
     window.testConnection = async function(e) {
       const button = e?.target || event?.target;
+      
+      // Check authentication first
+      if (!(await checkAuthentication())) {
+        showResult('result-connection', { 
+          error: 'Not authenticated. Please sign in with Adobe ID.' 
+        }, true);
+        return;
+      }
+      
       try {
         const result = await withLoading(button, vortexApi.testConnection());
         showResult('result-connection', result);
@@ -481,10 +576,36 @@
       }
     };
 
-    // Auto-test connection on load
-    setTimeout(() => {
-      testConnection();
-    }, 500);
+    // Initialize on load
+    (async function() {
+      log('Vortex Backend Debugger initialized', 'info');
+      log('Initializing Adobe IMS...', 'info');
+      
+      try {
+        await initializeIMS();
+        
+        // Check if already authenticated
+        const token = window.adobeIMS?.getAccessToken()?.token;
+        if (token) {
+          log('✓ Already authenticated with Adobe IMS', 'success');
+          log(`Token: ${token.substring(0, 20)}...`, 'info');
+          
+          // Auto-test if authenticated
+          setTimeout(() => {
+            log('Auto-testing connection...', 'info');
+            testConnection();
+          }, 1000);
+        } else {
+          log('⚠ Not authenticated. You will need to sign in to test backend.', 'warn');
+          log('Click any test button to see the sign-in prompt.', 'info');
+        }
+      } catch (error) {
+        log('✗ Failed to initialize Adobe IMS', 'error', error);
+      }
+      
+      log('', 'info');
+      log('Ready to test!', 'info');
+    })();
   </script>
 </body>
 </html>
