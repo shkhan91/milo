@@ -80,22 +80,34 @@ class VortexAPI {
   async _request(endpoint, data) {
     const token = this.getToken();
 
-    if (!token) {
+    // Allow test mode for local development (no IMS available)
+    const isTestMode = !token && !window.adobeIMS;
+
+    if (!token && !isTestMode) {
       throw new Error('Authentication required. Please sign in with Adobe IMS.');
     }
 
     this._log('Making request to:', endpoint);
     this._log('Request data:', data);
-    this._log('Token available:', 'Yes');
+    this._log('Token available:', token ? 'Yes' : 'Test Mode');
+    this._log('Test Mode:', isTestMode ? 'Yes (no IMS)' : 'No');
 
     try {
       // Build headers (same pattern as send-to-caas)
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = {};
 
-      // Add org ID if available (optional, backend can extract from token)
-      const orgId = this.getOrgId();
-      if (orgId) {
-        headers['x-gw-ims-org-id'] = orgId;
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+
+        // Add org ID if available (optional, backend can extract from token)
+        const orgId = this.getOrgId();
+        if (orgId) {
+          headers['x-gw-ims-org-id'] = orgId;
+        }
+      } else if (isTestMode) {
+        // Test mode - add header to indicate this
+        headers['X-Test-Mode'] = 'true';
+        this._log('⚠️ WARNING: Running in test mode without authentication', 'This should only be used for local development');
       }
 
       const requestOptions = {

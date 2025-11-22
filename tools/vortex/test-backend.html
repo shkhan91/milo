@@ -320,7 +320,26 @@
     const IMS_CLIENT_ID = 'milo_ims';
     const IMS_PROD_URL = 'https://auth.services.adobe.com/imslib/imslib.min.js';
     
+    // Check if we're on a domain where IMS will work
+    function isIMSCompatibleDomain() {
+      const hostname = window.location.hostname;
+      // IMS works on these domains
+      const allowedDomains = [
+        'adobe.com',
+        'hlx.page',
+        'hlx.live',
+        'adobeaemcloud.com'
+      ];
+      return allowedDomains.some(domain => hostname.includes(domain));
+    }
+    
     async function initializeIMS() {
+      // Skip IMS on local/incompatible domains
+      if (!isIMSCompatibleDomain()) {
+        console.warn('[Vortex] Adobe IMS not available on this domain. Using test mode.');
+        return false;
+      }
+
       window.adobeid = {
         client_id: IMS_CLIENT_ID,
         environment: 'prod',
@@ -328,8 +347,15 @@
       };
 
       if (!window.adobeIMS) {
-        await loadImsScript();
+        try {
+          await loadImsScript();
+          return true;
+        } catch (error) {
+          console.warn('[Vortex] Failed to load Adobe IMS:', error);
+          return false;
+        }
       }
+      return true;
     }
 
     function loadImsScript() {
@@ -343,7 +369,13 @@
     }
 
     async function checkAuthentication() {
-      await initializeIMS();
+      const imsAvailable = await initializeIMS();
+      
+      if (!imsAvailable) {
+        // Not on a compatible domain - show test mode warning
+        showTestModeWarning();
+        return 'test-mode';
+      }
       
       const token = window.adobeIMS?.getAccessToken()?.token;
       if (!token) {
@@ -351,6 +383,45 @@
         return false;
       }
       return true;
+    }
+
+    function showTestModeWarning() {
+      const warning = document.createElement('div');
+      warning.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 600px;
+        text-align: center;
+      `;
+      
+      warning.innerHTML = `
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 12px;">
+          🧪 Test Mode - Local Development
+        </div>
+        <div style="margin-bottom: 12px; line-height: 1.6; font-size: 14px;">
+          Adobe IMS is not available on this domain. Your backend must accept requests without IMS authentication for local testing.
+        </div>
+        <div style="font-size: 13px; opacity: 0.9;">
+          To test with real authentication, deploy to an Adobe domain (.hlx.page, .hlx.live, etc.)
+        </div>
+      `;
+      
+      document.body.appendChild(warning);
+      
+      // Auto-hide after 10 seconds
+      setTimeout(() => {
+        warning.style.opacity = '0';
+        warning.style.transition = 'opacity 0.5s';
+        setTimeout(() => warning.remove(), 500);
+      }, 10000);
     }
 
     function showAuthWarning() {
