@@ -5,6 +5,14 @@ import {
 
 const fragMap = {};
 
+/**
+ * Module-scoped registry of every fragment path resolved on the current page.
+ * Persists for the lifetime of the page (module scope), so duplicate-path
+ * detection works across all fragment initializations without polluting the
+ * global namespace.
+ */
+const loadedFragmentPaths = new Set();
+
 const removeHash = (url) => {
   const urlNoHash = url.split('#')[0];
   return url.includes('#_dnt') ? `${urlNoHash}#_dnt` : urlNoHash;
@@ -138,6 +146,13 @@ export default async function init(a) {
       severity: 'error',
     });
     return;
+  }
+
+  if (loadedFragmentPaths.has(relHref)) {
+    // eslint-disable-next-line no-console
+    console.warn('Duplicate fragment reference detected:', relHref);
+  } else {
+    loadedFragmentPaths.add(relHref);
   }
 
   let resourcePath = a.href;
