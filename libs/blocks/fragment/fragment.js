@@ -5,6 +5,11 @@ import {
 
 const fragMap = {};
 
+const LOADED_FRAGMENT_PATHS = new Set();
+
+/* c8 ignore next */
+export const _resetFragmentRegistry = () => LOADED_FRAGMENT_PATHS.clear();
+
 const removeHash = (url) => {
   const urlNoHash = url.split('#')[0];
   return url.includes('#_dnt') ? `${urlNoHash}#_dnt` : urlNoHash;
@@ -130,6 +135,12 @@ export default async function init(a) {
     inline = true;
     a.href = a.href.replace('#_inline', '');
     relHref = relHref.replace('#_inline', '');
+  }
+
+  if (LOADED_FRAGMENT_PATHS.has(relHref)) {
+    console.warn(`[Fragment] Duplicate fragment reference detected: "${relHref}". Each fragment should only be referenced once per page.`);
+  } else {
+    LOADED_FRAGMENT_PATHS.add(relHref);
   }
 
   if (isCircularRef(relHref)) {

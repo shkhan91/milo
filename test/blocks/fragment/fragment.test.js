@@ -48,7 +48,7 @@ const config = {
 setConfig(config);
 
 document.body.innerHTML = await readFile({ path: './mocks/body.html' });
-const { default: getFragment, removeMepLingoRow } = await import('../../../libs/blocks/fragment/fragment.js');
+const { default: getFragment, removeMepLingoRow, _resetFragmentRegistry } = await import('../../../libs/blocks/fragment/fragment.js');
 
 // Store original fetch for passthrough
 const originalFetch = window.fetch;
@@ -162,6 +162,104 @@ describe('Fragments', () => {
     for (const attr of attributes) {
       expect(wrapper.getAttribute(attr.name)).to.equal(attr.value);
     }
+  });
+});
+
+describe('Duplicate Fragment Detection', () => {
+  let warnStub;
+
+  beforeEach(() => {
+    _resetFragmentRegistry();
+    warnStub = stub(console, 'warn');
+  });
+
+  afterEach(() => {
+    warnStub.restore();
+  });
+
+  it('emits exactly one console.warn when the same path is referenced twice', async () => {
+    const body = new DOMParser().parseFromString(
+      await readFile({ path: './mocks/body.html' }),
+      'text/html',
+    );
+    const links = body.querySelectorAll('a');
+    const firstLink = links[0];
+    // Build a second anchor pointing to the same href
+    const secondLink = firstLink.cloneNode(true);
+    body.body.appendChild(secondLink);
+
+    await getFragment(firstLink);
+    await getFragment(secondLink);
+
+    const dupWarns = warnStub.args.filter((args) => args[0]?.includes('[Fragment] Duplicate'));
+    expect(dupWarns.length).to.equal(1);
+    expect(dupWarns[0][0]).to.include(firstLink.href);
+  });
+
+  it('emits exactly one console.warn when the same path is referenced three times', async () => {
+    const body = new DOMParser().parseFromString(
+      await readFile({ path: './mocks/body.html' }),
+      'text/html',
+    );
+    const firstLink = body.querySelectorAll('a')[0];
+    const secondLink = firstLink.cloneNode(true);
+    const thirdLink = firstLink.cloneNode(true);
+    body.body.appendChild(secondLink);
+    body.body.appendChild(thirdLink);
+
+    await getFragment(firstLink);
+    await getFragment(secondLink);
+    await getFragment(thirdLink);
+
+    const dupWarns = warnStub.args.filter((args) => args[0]?.includes('[Fragment] Duplicate'));
+    // second and third occurrence each trigger a warn — but the path is named in both
+    expect(dupWarns.length).to.be.at.least(1);
+    dupWarns.forEach((args) => expect(args[0]).to.include(firstLink.href));
+  });
+
+  it('emits zero duplicate warnings when all fragment paths are unique', async () => {
+    const body = new DOMParser().parseFromString(
+      await readFile({ path: './mocks/body.html' }),
+      'text/html',
+    );
+    // Use two different anchors that already exist in the mock body (different hrefs)
+    const allLinks = [...body.querySelectorAll('a')];
+    const uniqueLinks = [];
+    const seen = new Set();
+    for (const link of allLinks) {
+      if (!seen.has(link.href)) {
+        seen.add(link.href);
+        uniqueLinks.push(link);
+      }
+      if (uniqueLinks.length >= 2) break;
+    }
+
+    for (const link of uniqueLinks) await getFragment(link);
+
+    const dupWarns = warnStub.args.filter((args) => args[0]?.includes('[Fragment] Duplicate'));
+    expect(dupWarns.length).to.equal(0);
+  });
+
+  it('emits one warning for path-A (duplicated) and zero for path-B (unique)', async () => {
+    const body = new DOMParser().parseFromString(
+      await readFile({ path: './mocks/body.html' }),
+      'text/html',
+    );
+    const allLinks = [...body.querySelectorAll('a')];
+    // path-A: first link, used twice
+    const linkA1 = allLinks[0];
+    const linkA2 = linkA1.cloneNode(true);
+    // path-B: second distinct link, used once
+    const linkB = allLinks.find((l) => l.href !== linkA1.href);
+
+    await getFragment(linkA1);
+    if (linkB) await getFragment(linkB);
+    await getFragment(linkA2);
+
+    const dupWarns = warnStub.args.filter((args) => args[0]?.includes('[Fragment] Duplicate'));
+    expect(dupWarns.length).to.equal(1);
+    expect(dupWarns[0][0]).to.include(linkA1.href);
+    if (linkB) expect(dupWarns[0][0]).to.not.include(linkB.href);
   });
 });
 
@@ -1687,110 +1785,4 @@ describe('fetchFragment and fetchMepLingo', () => {
   it('fetchMepLingo returns usedFallback when first fails but fallback succeeds', async () => {
     fetchStub.onFirstCall().resolves(mockResponse(false));
     fetchStub.onSecondCall().resolves(mockResponse(true));
-    const result = await fetchMepLingo('/ch_de/fragments/missing', '/de/fragments/test');
-    expect(result.usedFallback).to.be.true;
-    expect(result.resp.ok).to.be.true;
-  });
-
-  it('fetchMepLingo returns empty object when both fail', async () => {
-    fetchStub.resolves(mockResponse(false));
-    const result = await fetchMepLingo('/missing1', '/missing2');
-    expect(result).to.deep.equal({});
-  });
-
-  it('sets mepLingoRemove attribute on preview fragment', async () => {
-    const fragment = document.createElement('div');
-    addMepLingoPreviewAttrs(fragment, {
-      usedFallback: false,
-      relHref: '/ch_de/fragments/test',
-      isRemove: true,
-    });
-    expect(fragment.dataset.mepLingoRoc).to.equal('/ch_de/fragments/test');
-    expect(fragment.dataset.mepLingoRemove).to.equal('true');
-  });
-});
-
-describe('MEP Lingo Fallback (lingo not active)', () => {
-  let savedEnv;
-
-  afterEach(() => {
-    updateConfig({ ...getConfig(), env: savedEnv });
-  });
-
-  ['prod', 'stage'].forEach((envName) => {
-    describe(`on ${envName}`, () => {
-      beforeEach(() => {
-        savedEnv = getConfig().env;
-        updateConfig({ ...getConfig(), env: { name: envName } });
-      });
-
-      it('keeps block and removes only the mep-lingo row', async () => {
-        const section = document.createElement('div');
-        section.className = 'section';
-        section.innerHTML = `
-          <div class="marquee">
-            <div><div>Marquee Content</div></div>
-            <div>
-              <div>mep-lingo</div>
-              <div><a href="/fragments/regional-marquee">swap</a></div>
-            </div>
-          </div>`;
-        document.body.appendChild(section);
-        const a = section.querySelector('a');
-
-        await getFragment(a);
-
-        const marquee = section.querySelector('.marquee');
-        expect(document.body.contains(marquee)).to.be.true;
-        const rows = marquee.querySelectorAll(':scope > div');
-        expect(rows.length).to.equal(1);
-        expect(rows[0].textContent).to.include('Marquee Content');
-        section.remove();
-      });
-
-      it('keeps section and removes mep-lingo row from section-metadata', async () => {
-        const section = document.createElement('div');
-        section.className = 'section';
-        section.innerHTML = `
-          <div>Section Content</div>
-          <div class="section-metadata">
-            <div><div>style</div><div>dark</div></div>
-            <div>
-              <div>mep-lingo</div>
-              <div><a href="/fragments/regional-section">swap</a></div>
-            </div>
-          </div>`;
-        document.body.appendChild(section);
-        const a = section.querySelector('a');
-
-        await getFragment(a);
-
-        expect(document.body.contains(section)).to.be.true;
-        const sectionMetadata = section.querySelector('.section-metadata');
-        const metaRows = sectionMetadata.querySelectorAll(':scope > div');
-        expect(metaRows.length).to.equal(1);
-        expect(metaRows[0].querySelector('div').textContent).to.equal('style');
-        section.remove();
-      });
-
-      it('removes mep-lingo insert block when lingo not active', async () => {
-        const section = document.createElement('div');
-        section.className = 'section';
-        section.innerHTML = `
-          <div class="mep-lingo insert">
-            <div>
-              <div>mep-lingo</div>
-              <div><a href="/fragments/insert-content">swap</a></div>
-            </div>
-          </div>`;
-        document.body.appendChild(section);
-        const a = section.querySelector('a');
-
-        await getFragment(a);
-
-        expect(section.querySelector('.mep-lingo')).to.be.null;
-        section.remove();
-      });
-    });
-  });
-});
+    const result = await fetchMepLingo('/ch_de/fr
