@@ -5,6 +5,35 @@ import {
 
 const fragMap = {};
 
+// Module-scoped set that tracks every normalised fragment path already requested
+// during the current page session. Populated inside init() to detect duplicates.
+const loadedFragmentPaths = new Set();
+
+/**
+ * Normalise a fragment path so that semantically identical paths
+ * (differing only in trailing slash, casing, query-string, or hash)
+ * are treated as equal for duplicate-detection purposes.
+ * @param {string} path
+ * @returns {string}
+ */
+export const normalisePath = (path) => {
+  try {
+    // Use URL to strip query-string and hash, then work on the pathname
+    const u = new URL(path, 'https://x');
+    return u.pathname.replace(/\/+$/, '').toLowerCase();
+  } catch {
+    // Fallback for relative paths that URL cannot parse
+    return path.split('?')[0].split('#')[0].replace(/\/+$/, '').toLowerCase();
+  }
+};
+
+/**
+ * Reset the fragment-path registry.
+ * TEST-ONLY export — call this in beforeEach() to ensure test isolation
+ * without reloading the module. Never call this in production code.
+ */
+export const _resetFragmentRegistry = () => loadedFragmentPaths.clear();
+
 const removeHash = (url) => {
   const urlNoHash = url.split('#')[0];
   return url.includes('#_dnt') ? `${urlNoHash}#_dnt` : urlNoHash;
@@ -98,6 +127,15 @@ const preserveAuthored = (a, isBlockSwap, originalBlock, originalSection) => {
 };
 
 export default async function init(a) {
+  // Duplicate-fragment detection: warn once per page if the same path is loaded more than once.
+  const normalisedHref = normalisePath(a.href);
+  if (loadedFragmentPaths.has(normalisedHref)) {
+    // eslint-disable-next-line no-console
+    console.warn(`Duplicate fragment reference detected: ${normalisedHref}`);
+  } else {
+    loadedFragmentPaths.add(normalisedHref);
+  }
+
   const { decorateArea, mep, placeholders, locale } = getConfig();
   let relHref = await localizeLinkAsync(a.href, window.location.hostname, false, a);
   let url;
