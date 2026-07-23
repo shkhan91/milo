@@ -361,4 +361,9 @@ export default async function init(el) {
   el.replaceChildren();
   el.append(heroHeader, grid, elasticCarousel);
   handleCarouselItemsOffsets({ heroHeader, grid, elasticCarousel, el });
+
+  el.addEventListener('focusin', (e) => {
+    const btn = e.target.closest('.play-pause-button, .pause-play-wrapper');
+    if (btn && btn.matches(':focus-visible')) scrollHubHeroTo(btn, 1.0);
+  });
 }
