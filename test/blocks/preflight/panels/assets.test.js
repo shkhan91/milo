@@ -1,7 +1,7 @@
 import { expect } from '@esm-bundle/chai';
 import sinon from 'sinon';
 import { html, render } from '../../../../libs/deps/htm-preact.js';
-import Assets from '../../../../libs/blocks/preflight/panels/assets.js';
+import Assets, { showBackToPreflight } from '../../../../libs/blocks/preflight/panels/assets.js';
 
 describe('Preflight Assets Panel', () => {
   let container;
@@ -56,5 +56,48 @@ describe('Preflight Assets Panel', () => {
     expect(container.querySelector('.assets-item')).to.exist;
     expect(container.querySelector('.assets-item-title')).to.exist;
     expect(container.querySelector('.assets-item-description')).to.exist;
+  });
+});
+
+describe('showBackToPreflight', () => {
+  afterEach(() => {
+    document.getElementById('preflight-back-popover')?.remove();
+  });
+
+  it('creates a pinned "Back to Preflight" button in the document body', () => {
+    showBackToPreflight();
+    const btn = document.getElementById('preflight-back-popover');
+    expect(btn).to.exist;
+    expect(btn.tagName).to.equal('BUTTON');
+    expect(btn.textContent).to.equal('Back to Preflight');
+    expect(btn.getAttribute('aria-label')).to.equal('Back to Preflight');
+    expect(document.body.contains(btn)).to.be.true;
+  });
+
+  it('does not create a duplicate button if one already exists', () => {
+    showBackToPreflight();
+    showBackToPreflight();
+    const all = document.querySelectorAll('#preflight-back-popover');
+    expect(all.length).to.equal(1);
+  });
+
+  it('removes the button when clicked', () => {
+    showBackToPreflight();
+    const btn = document.getElementById('preflight-back-popover');
+    btn.click();
+    expect(document.getElementById('preflight-back-popover')).to.be.null;
+  });
+
+  it('dispatches custom:preflight event on a present sidekick element when clicked', () => {
+    const sidekick = document.createElement('aem-sidekick');
+    document.body.appendChild(sidekick);
+    let fired = false;
+    sidekick.addEventListener('custom:preflight', () => { fired = true; });
+
+    showBackToPreflight();
+    document.getElementById('preflight-back-popover').click();
+
+    expect(fired).to.be.true;
+    sidekick.remove();
   });
 });

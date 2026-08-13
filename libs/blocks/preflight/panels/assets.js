@@ -3,6 +3,29 @@ import { STATUS } from '../checks/constants.js';
 import { getPreflightResults } from '../checks/preflightApi.js';
 import { isViewportTooSmall } from '../checks/assets.js';
 
+const BACK_TO_PREFLIGHT_ID = 'preflight-back-popover';
+
+export function showBackToPreflight() {
+  if (document.getElementById(BACK_TO_PREFLIGHT_ID)) return;
+  const btn = document.createElement('button');
+  btn.id = BACK_TO_PREFLIGHT_ID;
+  btn.textContent = 'Back to Preflight';
+  btn.setAttribute('aria-label', 'Back to Preflight');
+  btn.addEventListener('click', () => {
+    btn.remove();
+    const sidekick = document.querySelector('aem-sidekick, helix-sidekick');
+    sidekick?.dispatchEvent(new CustomEvent('custom:preflight', { bubbles: true }));
+  });
+  document.body.appendChild(btn);
+}
+
+function navigateToAsset(asset) {
+  const dialog = document.querySelector('.dialog-modal#preflight');
+  dialog?.closest('dialog')?.close?.();
+  asset.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showBackToPreflight();
+}
+
 // Define signals for check results and viewport status
 const assetDimensionsResult = signal({
   title: 'Asset Dimensions',
@@ -86,7 +109,9 @@ function AssetGroup({ group }) {
     const itemClass = isAboveFoldWithMismatch ? 'assets-image-grid-item above-fold-critical' : 'assets-image-grid-item';
 
     return html`
-      <div class='${itemClass}' title='${isAboveFoldWithMismatch ? 'Above-the-fold asset with critical dimension issues' : ''}'>
+      <div class='${itemClass}'
+        title='${isAboveFoldWithMismatch ? 'Above-the-fold asset with critical dimension issues' : ''}'
+        onClick=${() => asset.asset && navigateToAsset(asset.asset)}>
         ${asset.type === 'image' && html`<img src='${asset.src}' />`}
         ${asset.type === 'video' && html`<video controls src='${asset.src}' />`}
         ${asset.type === 'mpc' && html`<iframe src='${asset.src}' />`}
@@ -97,7 +122,7 @@ function AssetGroup({ group }) {
           ${asset.hasMismatch && html`<span>Recommended size: ${asset.recommendedDimensions}</span>`}
           <span>Type: ${asset.typeLabel}</span>
           ${asset.notes && html`<span><strong>Notes:</strong> ${asset.notes}</span>`}
-          ${isAboveFoldWithMismatch && html`<span class="above-fold-notice"><strong>⚠️ CRITICAL:</strong></span>`}
+          ${isAboveFoldWithMismatch && html`<span class="above-fold-notice"><strong>CRITICAL:</strong></span>`}
         </div>
       </div>`;
   })}
