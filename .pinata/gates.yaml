@@ -69,6 +69,27 @@ gates:
     blocking: true
     failure_route: repair_loop
 
+  # Behaviour changes must ship a test that FAILS on the base commit and
+  # PASSES on the candidate. `unit-tests` above only proves the suite is green
+  # — a candidate that changes behaviour and adds no covering test passes it
+  # trivially. This gate replays the diff's new/changed test files against the
+  # base commit in a scratch worktree; a test that already passed there proves
+  # nothing about the change and is rejected. Producers that legitimately have
+  # nothing to test (pure refactor, config-only) declare
+  # `TEST-ABSTENTION: <reason>` and the gate records the reason as evidence.
+  #
+  # `patch-coverage` (the diff_coverage template) is deliberately NOT declared
+  # here: milo's web-test-runner.config.mjs:24 coverageConfig emits no XML
+  # report, so the gate would have no coverage document to read and would fail
+  # every run. Add it once the runner emits cobertura/clover XML.
+  behaviour-test:
+    template: fail_to_pass
+    name: Changed behaviour ships a fail-to-pass test
+    cmd: npm run test:file -- {test_files}
+    timeout_s: 600
+    blocking: true
+    failure_route: repair_loop
+
   block-structure:
     template: command
     name: Block structure (.js + .css per changed block)
