@@ -90,6 +90,27 @@ gates:
     blocking: true
     failure_route: repair_loop
 
+  # Every gate above is scoped to the files the change touches, which is what
+  # makes them fast — and it means none of them can see a change that breaks
+  # something elsewhere. This one runs the WHOLE suite, the same `npm test` CI
+  # runs, and compares it against the base commit: failures that already existed
+  # are reported and forgiven, failures this change caused fail the gate.
+  #
+  # Both halves earn their place. PR #8 was reddened by 25 failures in
+  # merch-card-autoblock that fail identically on stage, with nothing on the PR
+  # to say so — the harness read as wrong when it was right. And a repository
+  # that is already red is exactly where one more failure goes unnoticed.
+  #
+  # Cost: a green suite never runs the base, so most runs pay for one pass. It
+  # doubles only when something is failing, which today is every run.
+  suite-delta:
+    template: suite_delta
+    name: No test regressions outside the changed files
+    cmd: npm test
+    timeout_s: 900
+    blocking: true
+    failure_route: repair_loop
+
   block-structure:
     template: command
     name: Block structure (.js + .css per changed block)
