@@ -2,9 +2,19 @@ import { getPreflightResults } from '../blocks/preflight/checks/preflightApi.js'
 import { loadStyle, getConfig } from './utils.js';
 
 let wasDismissed = false;
+let suppressedByPreflight = false;
 let sidekickObserver;
 let linkCheckListener;
 const sidekick = document.querySelector('aem-sidekick, helix-sidekick');
+
+export function suppressForPreflight() {
+  suppressedByPreflight = true;
+  document.querySelector('.milo-preflight-overlay')?.remove();
+}
+
+export function unsuppressForPreflight() {
+  suppressedByPreflight = false;
+}
 function openPreflightPanel() {
   if (!sidekick) return;
   sidekick.dispatchEvent(new CustomEvent('custom:preflight', { bubbles: true }));
@@ -19,6 +29,7 @@ function getMasUnpublishedCount(results) {
 }
 
 async function createPreflightNotification(masUnpublishedCount = 0) {
+  if (suppressedByPreflight) return;
   const existingNotification = document.querySelector('.milo-preflight-overlay');
   if (existingNotification) return;
   const { miloLibs, codeRoot } = getConfig();
@@ -66,7 +77,7 @@ function setupLinkCheckListener() {
   linkCheckListener = async (event) => {
     const { hasFailures } = event.detail;
 
-    if (hasFailures && !wasDismissed) {
+    if (hasFailures && !wasDismissed && !suppressedByPreflight) {
       const existingNotification = document.querySelector('.milo-preflight-overlay');
       const isPublishButtonDisabled = sidekick?.shadowRoot
         ?.querySelector('plugin-action-bar')?.shadowRoot
@@ -84,7 +95,7 @@ function setupLinkCheckListener() {
 function createObserver() {
   if (sidekickObserver) return;
   sidekickObserver = new MutationObserver(async () => {
-    if (wasDismissed || !sidekick) return;
+    if (wasDismissed || suppressedByPreflight || !sidekick) return;
     if (sidekick.getAttribute('open') !== 'true') {
       document.querySelector('.milo-preflight-overlay')?.remove();
       return;

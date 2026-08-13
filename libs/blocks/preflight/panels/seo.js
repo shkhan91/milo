@@ -121,15 +121,25 @@ export async function sendResults() {
   );
 }
 
+const CHIP_MAP = {
+  green: ['preflight-chip preflight-chip-pass', 'Pass'],
+  red: ['preflight-chip preflight-chip-fail', 'Fail'],
+  orange: ['preflight-chip preflight-chip-warning', 'Warning'],
+};
+
 function SeoItem({ id, icon, title, description, supportsAi }) {
   const aiSuggestion = aiSuggestions.value.find((suggestion) => suggestion.id === id)?.aiSuggestion;
   const showLoadingAi = isAsoSuite.value && supportsAi && icon === 'red' && !aiSuggestion;
   const showAiSuggestion = supportsAi && aiSuggestion && icon === 'red';
+  const [chipClass, chipLabel] = CHIP_MAP[icon] || [];
   return html`
     <div class=preflight-item>
       <div class="result-icon ${icon}"></div>
       <div class=preflight-item-text>
-        <p class=preflight-item-title>${title}</p>
+        <p class=preflight-item-title>
+          ${title}
+          ${chipClass && html`<span class="${chipClass}">${chipLabel}</span>`}
+        </p>
         <p class=preflight-item-description>${description}</p>
          ${showLoadingAi && html`<p class="ai-suggestion">AI suggestion: <div class="result-icon purple"></div></p>`}
         ${showAiSuggestion && html`<p class="ai-suggestion">AI suggestion: ${aiSuggestion}</p>`}
@@ -173,6 +183,12 @@ async function getResults() {
   });
 
   await Promise.all(checkPromises);
+
+  const errors = icons.filter((i) => i === 'red').length;
+  const warnings = icons.filter((i) => i === 'orange').length;
+  if (errors || warnings) {
+    window.dispatchEvent(new CustomEvent('preflight:badge-update', { detail: { tab: 'SEO', errors, warnings } }));
+  }
 
   const red = icons.find((icon) => icon === 'red');
   if (!red) return;

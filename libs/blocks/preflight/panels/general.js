@@ -65,7 +65,11 @@ async function getLocalizationResults() {
       title: res.title,
       description: res.description,
     };
-    localizationIssues.value = res.details?.violations || [];
+    const violations = res.details?.violations || [];
+    localizationIssues.value = violations;
+    if (violations.length > 0) {
+      window.dispatchEvent(new CustomEvent('preflight:badge-update', { detail: { tab: 'General', errors: violations.length } }));
+    }
   } catch (error) {
     localizationResult.value = {
       icon: 'red',
@@ -300,12 +304,22 @@ function ContentGroup({ name, group }) {
     </div>`;
 }
 
+const CHIP_MAP = {
+  green: ['preflight-chip preflight-chip-pass', 'Pass'],
+  red: ['preflight-chip preflight-chip-fail', 'Fail'],
+  orange: ['preflight-chip preflight-chip-warning', 'Warning'],
+};
+
 function StructureItem({ icon, title, description }) {
+  const [chipClass, chipLabel] = CHIP_MAP[icon] || [];
   return html`
     <div class="preflight-item">
       <div class="result-icon ${icon}"></div>
       <div class="preflight-item-text">
-        <p class="preflight-item-title">${title}</p>
+        <p class="preflight-item-title">
+          ${title}
+          ${chipClass && html`<span class="${chipClass}">${chipLabel}</span>`}
+        </p>
         <p class="preflight-item-description">${description}</p>
       </div>
     </div>`;
