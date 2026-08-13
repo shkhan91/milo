@@ -16,8 +16,15 @@ const viewportTooSmall = signal(isViewportTooSmall());
 
 /**
  * Runs asset checks and updates signals with the results.
+ * Signals are reset first to avoid stale state across modal open/close cycles.
  */
 async function getResults() {
+  assetDimensionsResult.value = { title: 'Asset Dimensions', description: 'Checking...' };
+  assetsWithMismatch.value = [];
+  assetsWithMatch.value = [];
+  criticalAssetFailures.value = [];
+  warningAssetFailures.value = [];
+
   const results = await getPreflightResults({
     url: window.location.pathname,
     area: document,
@@ -46,6 +53,37 @@ async function getResults() {
     criticalAssetFailures.value = result.details.criticalAssetFailures || [];
     warningAssetFailures.value = result.details.warningAssetFailures || [];
   }
+}
+
+function showBackToPreflightPopover() {
+  if (document.querySelector('.back-to-preflight-popover')) return;
+  const popover = document.createElement('div');
+  popover.className = 'back-to-preflight-popover';
+  const btn = document.createElement('button');
+  btn.className = 'back-to-preflight-btn';
+  btn.textContent = 'Back to Preflight';
+  btn.addEventListener('click', () => {
+    popover.remove();
+    const sidekick = document.querySelector('aem-sidekick, helix-sidekick');
+    sidekick?.dispatchEvent(new CustomEvent('custom:preflight', { bubbles: true }));
+  });
+  popover.appendChild(btn);
+  document.body.appendChild(popover);
+}
+
+function navigateToAsset(src) {
+  // Close preflight modal
+  document.querySelector('.dialog-modal#preflight')?.closest('dialog')?.querySelector('.dialog-close')?.click();
+
+  // Scroll element into view
+  const el = document.querySelector(`img[src="${src}"], video[src="${src}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.outline = '3px solid var(--s2a-color-content-utility-error, #b31a0a)';
+    setTimeout(() => { el.style.outline = ''; }, 3000);
+  }
+
+  showBackToPreflightPopover();
 }
 
 /**
@@ -86,7 +124,10 @@ function AssetGroup({ group }) {
     const itemClass = isAboveFoldWithMismatch ? 'assets-image-grid-item above-fold-critical' : 'assets-image-grid-item';
 
     return html`
-      <div class='${itemClass}' title='${isAboveFoldWithMismatch ? 'Above-the-fold asset with critical dimension issues' : ''}'>
+      <div class='${itemClass}'
+        title='${isAboveFoldWithMismatch ? 'Above-the-fold asset with critical dimension issues' : ''}'
+        onClick=${() => navigateToAsset(asset.src)}
+        style='cursor:pointer'>
         ${asset.type === 'image' && html`<img src='${asset.src}' />`}
         ${asset.type === 'video' && html`<video controls src='${asset.src}' />`}
         ${asset.type === 'mpc' && html`<iframe src='${asset.src}' />`}
@@ -97,7 +138,7 @@ function AssetGroup({ group }) {
           ${asset.hasMismatch && html`<span>Recommended size: ${asset.recommendedDimensions}</span>`}
           <span>Type: ${asset.typeLabel}</span>
           ${asset.notes && html`<span><strong>Notes:</strong> ${asset.notes}</span>`}
-          ${isAboveFoldWithMismatch && html`<span class="above-fold-notice"><strong>⚠️ CRITICAL:</strong></span>`}
+          ${isAboveFoldWithMismatch && html`<span class="above-fold-notice"><strong>CRITICAL:</strong></span>`}
         </div>
       </div>`;
   })}

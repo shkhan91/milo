@@ -16,5 +16,13 @@ describe('Preflight performance', () => {
       const panelItems = document.querySelectorAll('.preflight-item');
       expect(panelItems.length).to.exist;
     });
+
+    it('does not render Highlight LCP link when no LCP element found', () => {
+      const panel = html`<${Panel} />`;
+      render(panel, document.body);
+      // lcpFound starts false; the highlight link should not be present
+      const highlightLink = document.querySelector('.performance-element-preview');
+      expect(highlightLink).to.not.exist;
+    });
   });
 });
