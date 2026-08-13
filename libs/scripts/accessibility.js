@@ -56,6 +56,23 @@ function scrollTabFocusedElIntoView() {
       return;
     }
 
+    // An absolutely-positioned element (e.g. consonant-play-btn) may report a
+    // rect that appears within viewport bounds while its scroll-container is
+    // still transitioning off-screen, or may have zero dimensions before paint.
+    // Fall back to the nearest scroll ancestor's visible rect in those cases.
+    if (rect.width === 0 || rect.height === 0) {
+      element.scrollIntoView({ behavior: 'instant', block: 'center' });
+      return;
+    }
+    const scrollAncestor = element.closest('.modal-img-link');
+    if (scrollAncestor) {
+      const ancestorRect = scrollAncestor.getBoundingClientRect();
+      if (ancestorRect.top < 0 || ancestorRect.bottom > viewportHeight) {
+        element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        return;
+      }
+    }
+
     const centerX = rect.left + rect.width / 2;
     const bottomPointY = rect.bottom - rect.height * 0.05;
 
